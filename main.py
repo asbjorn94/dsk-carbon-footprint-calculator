@@ -12,7 +12,7 @@ def get_contacts():
     print("Called get_contacts")
     return jsonify({"contacts": json_contacts})
 
-@app.route("/get_footprint", methods=["POST"])
+@app.route("/create_contact", methods=["POST"])
 def create_contact():
     first_name = request.json.get("firstName")
     last_name = request.json.get("lastName")
@@ -31,6 +31,13 @@ def create_contact():
         return jsonify({"message": str(e)}), 400
 
     return jsonify({"message": "User created!"}), 201
+
+@app.route("/add_five", methods=["POST"])
+def add_five():
+    number = request.json.get("value")
+    return_value = int(number) + 5
+
+    return jsonify({"return_value": return_value}), 201
 
 # if __name__ == "__main__":
 #     with app.app_context():

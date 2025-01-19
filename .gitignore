@@ -1,4 +1,8 @@
 __pycache__/
+res
+jupyter_test_env
+
 *.db
+*.ipynb
 local_config.py
 .venv

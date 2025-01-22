@@ -8,3 +8,6 @@ jupyter_test_env
 
 local_config.py
 .venv
+
+#Only a temporary CSV file
+res/DSK_tiny.csv

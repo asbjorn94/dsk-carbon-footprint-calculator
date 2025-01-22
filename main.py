@@ -3,6 +3,18 @@ from config import app, db
 from models import Contact
 from panda_database import panda_db
 
+@app.route("/get_footprint", methods=["POST"])
+def get_footprint():
+    print("request.json: " + str(request.json))
+    # print("request.json(orient = 'recods'): " + request.to_json(orient = "records"))
+    if request.json.get("product") == "Opskrift":
+        return panda_db.to_json(orient = "records")
+        # return panda_db.to_json(index=False)
+    else:
+        return (
+            jsonify({"Error": "Bad request"}),400
+        )
+
 with app.app_context():
     db.create_all()
 
@@ -39,15 +51,7 @@ def add_five():
 
     return jsonify({"return_value": return_value}), 201
 
-@app.route("/get_footprint", methods=["POST"])
-def get_footprint():
-    print("request.json: " + str(request.json))
-    if request.json.get("product") == "Opskrift":
-        return panda_db.to_json()
-    else:
-        return (
-            jsonify({"Error": "Bad request"}),400
-        )
+
 
 
 # if __name__ == "__main__":

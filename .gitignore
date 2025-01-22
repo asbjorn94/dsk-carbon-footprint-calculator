@@ -4,6 +4,7 @@ jupyter_test_env
 *.db
 *.ipynb
 *.numbers
+*.sh
 
 local_config.py
 .venv

@@ -1,14 +1,15 @@
-product,kg_co2e_pr_kg
-Peberfrugt,0.96
-Tomat,0.46
-Squash,0.73
-Aubergine,0.87
-"Tomat, soltørret",2.33
-Græskar,0.73
-Agurk,0.37
-Drueagurk (sylteagurk),0.37
-"Peber, chili",0.96
-"Oksekød, inderlår uden kappe",55.31
-Kartoffel,0.39
-"Smør, saltet",3.86
-Tun,3.85
+ID,product,kg_co2e_pr_kg
+0,Peberfrugt,0.96
+1,Tomat,0.46
+2,Squash,0.73
+3,Aubergine,0.87
+4,"Tomat, soltørret",2.33
+5,Græskar,0.73
+6,Agurk,0.37
+7,Drueagurk (sylteagurk),0.37
+8,"Peber, chili",0.96
+9,"Oksekød, inderlår uden kappe",55.31
+10,Kartoffel,0.39
+11,"Smør, saltet",3.86
+12,Tun,3.85
+13,Pasta,1.73

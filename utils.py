@@ -18,7 +18,9 @@ class Utils:
 
             best_match = Utils.get_best_database_match(ingredient)
             food_item_footprint = best_match[2]
-            total_footprint_for_ingredient = Utils.calculate_footprint_with_amount(amount, food_item_footprint)
+            (quantity, unit) = Utils.split_into_quantity_and_unit(amount)
+            footprint_in_kilograms = Utils.compute_kilograms_from_unit(quantity, unit)
+            total_footprint_for_ingredient = Utils.calculate_footprint_with_amount(footprint_in_kilograms, food_item_footprint)
 
             print(f"""
                     For ingredient (incl amount): {result}, \n
@@ -27,7 +29,7 @@ class Utils:
                   """)
                   
 
-    
+    @staticmethod
     def parse_recipe_item(text: str) -> tuple[str,str]:
         print(f"Text in parse_recipe_item: {text}")
 
@@ -38,7 +40,8 @@ class Utils:
         # print(f"match.group(2): {match.group(2)}")
     #         result.append((match.group(1),match.group(2)))
         return (match.group(1),match.group(2))
-            
+
+    @staticmethod       
     def get_best_database_match(ingredient: str):
         print(f"ingredient inside get_best_database_match: {ingredient}")
 
@@ -56,47 +59,44 @@ class Utils:
         print(f'ratios[-1]: {ratios[-1]}')
 
         return ratios[-1]
-
-    def calculate_footprint_with_amount(amount : str, footprint : float): #Only handles amount = kg as of now
+    
+    @staticmethod
+    def compute_kilograms_from_unit(quantity: float, unit : str):
+        if unit == "kg":
+            return quantity
+        elif unit == "g":
+            return quantity/1000
+    
+    @staticmethod
+    def split_into_quantity_and_unit(amount : str):
         pattern = r"^(\d*\.?\d*) (.*)$"
         match = re.match(pattern, amount)
         quantity = float(match.group(1))
         unit = match.group(2)
 
-        return quantity * footprint #Only handles amount = kg as of now
+        return (quantity,unit)
+
+    @staticmethod
+    def calculate_footprint_with_amount(amount : float, footprint : float):
+
+        return amount * footprint #Only handles amount = kg as of now
+
+    # def calculate_footprint_with_amount(amount : str, footprint : float): #Only handles amount = kg as of now
+    #     pattern = r"^(\d*\.?\d*) (.*)$"
+    #     match = re.match(pattern, amount)
+    #     quantity = float(match.group(1))
+    #     unit = match.group(2)
+
+    #     return quantity * footprint #Only handles amount = kg as of now
 
         
 
 
 
-# from thefuzz import fuzz
-# from typing import Tuple, List
-# import re
-# from source.climate_database import ClimateDatabase
 
-    # def parse_recipe_item(text: str) -> List[Tuple[str,str]]:
-    #     # Extract items from <li> tags
-    #     items = re.findall(r"<li>(.*?)</li>", text)
-    #     item = items[0]
-    #     item = item.strip()
 
     #     # item_alternatives = item.split(" eller ")
     #     item_alternatives = re.split(" eller ", item, flags=re.IGNORECASE)
-
-    #     result: List[Tuple[str,str]] = []
-    #     # result.append(List[List["hey","hey"]])
-
-    #     for i, x in enumerate(item_alternatives):
-    #         # Capture 2 groups (),()
-    #         # Group 1: Recognition of quantity + unit
-    #         # Group 2: Rest of string "(.*)$"
-
-   
-
-    #     return result
-
-    # def getHighestRatios(text) -> List[tuple[str,str]]:
-
 
 
 

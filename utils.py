@@ -51,7 +51,7 @@ class Utils:
         ratios = []  
         for i, fooditem in enumerate(panda_db['product']):
             ratio = fuzz.partial_ratio(ingredient, fooditem) #TODO: Find out which fuzz method is best suited...
-            footprint = float(panda_db['footprint'][i])
+            footprint = float(panda_db['kg_co2e_pr_kg'][i])
             data_tuple = (ratio,fooditem,footprint) #TODO make other data structure, e.g. class
             ratios.append(data_tuple)
 

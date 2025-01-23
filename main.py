@@ -12,7 +12,12 @@ def get_footprint():
 
 
     loaded_request: dict = request.json
-    Utils.parse_recipe_items(loaded_request.get('request'))
+    response = Utils.parse_recipe_items(loaded_request.get('request'))
+
+    # return panda_db.to_json(orient = "records")
+    return json.dumps(response)
+
+
     # print(f"type(loaded_request.get('request')): {type(loaded_request.get('request')[0])}")
     # ingredients = request.json.get('request')
 
@@ -20,7 +25,7 @@ def get_footprint():
     #     print(f"Item {i}: {item.get('liElement')}")
     #     print(f"type(item.get('liElement')), {i}: {type(item.get('liElement'))}")
     # print("request.json(orient = 'recods'): " + request.to_json(orient = "records"))
-    return panda_db.to_json(orient = "records")
+
     # if request.json.get("product") == "Opskrift":
     #     return panda_db.to_json(orient = "records")
     # else:

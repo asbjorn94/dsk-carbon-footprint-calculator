@@ -7,8 +7,9 @@ from thefuzz import fuzz
 class Utils:
     
     @staticmethod
-    def parse_recipe_items(recipe_list: List[dict]):
-        # result = []
+    def parse_recipe_items(recipe_list: List[dict]) -> list:
+        ingredient_footprints = []
+        
         for i, item in enumerate(recipe_list):
             result = Utils.parse_recipe_item(item.get("liElement"))
             # print(f"result[0]: {result[0]}")
@@ -17,6 +18,7 @@ class Utils:
             ingredient = result[1]
 
             best_match = Utils.get_best_database_match(ingredient)
+            food_item_name_best_match = best_match[1]
             food_item_footprint = best_match[2]
             (quantity, unit) = Utils.split_into_quantity_and_unit(amount)
             footprint_in_kilograms = Utils.compute_kilograms_from_unit(quantity, unit)
@@ -27,7 +29,15 @@ class Utils:
                     the lookup in the database was found to be {best_match[1]}, \n 
                     and the total footprint was found to be: {total_footprint_for_ingredient}
                   """)
-                  
+
+            ingredient_details = {
+                "foodItemName": food_item_name_best_match,
+                "totalFootprintForIngredient": total_footprint_for_ingredient   
+            }
+
+            ingredient_footprints.append(ingredient_details)
+
+        return ingredient_footprints      
 
     @staticmethod
     def parse_recipe_item(text: str) -> tuple[str,str]:
@@ -51,7 +61,7 @@ class Utils:
             ratio = fuzz.partial_ratio(ingredient, fooditem) #TODO: Find out which fuzz method is best suited...
             footprint = float(panda_db['footprint'][i])
             data_tuple = (ratio,fooditem,footprint) #TODO make other data structure, e.g. class
-            print(f"data_tuple: {data_tuple}")
+            # print(f"data_tuple: {data_tuple}")
             ratios.append(data_tuple)
 
         ratios.sort(key = lambda x: x[0])

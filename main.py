@@ -1,20 +1,24 @@
 from flask import request, jsonify
 from config import app, db
 from models import Contact
-from panda_database import panda_db
+from panda_database import panda_db # To be removed from here, I think
 import json
+from utils import Utils
 
 @app.route("/get_footprint", methods=["POST"])
 def get_footprint():
-    print("request.json: " + str(request.json))
-    print("type(request.json): " + str(type(request.json)))
+    # print("request.json: " + str(request.json))
+    # print("type(request.json): " + str(type(request.json)))
+
 
     loaded_request: dict = request.json
-    print(f"loaded_request.get('request'): {loaded_request.get('request')}")
-    ingredients = request.json.get('request')
-    for i, item in enumerate(ingredients):
-        print(f"Item {i}: {item.get('liElement')}")
-        print(f"type(item.get('liElement')), {i}: {type(item.get('liElement'))}")
+    Utils.parse_recipe_items(loaded_request.get('request'))
+    # print(f"type(loaded_request.get('request')): {type(loaded_request.get('request')[0])}")
+    # ingredients = request.json.get('request')
+
+    # for i, item in enumerate(ingredients):
+    #     print(f"Item {i}: {item.get('liElement')}")
+    #     print(f"type(item.get('liElement')), {i}: {type(item.get('liElement'))}")
     # print("request.json(orient = 'recods'): " + request.to_json(orient = "records"))
     return panda_db.to_json(orient = "records")
     # if request.json.get("product") == "Opskrift":

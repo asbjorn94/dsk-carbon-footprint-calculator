@@ -15,7 +15,18 @@ class Utils:
             # print(f"result[1]: {result[1]}")
             amount = result[0]
             ingredient = result[1]
-            Utils.get_best_database_match(ingredient)
+
+            best_match = Utils.get_best_database_match(ingredient)
+            food_item_footprint = best_match[2]
+            total_footprint_for_ingredient = Utils.calculate_footprint_with_amount(amount, food_item_footprint)
+
+            print(f"""
+                    For ingredient (incl amount): {result}, \n
+                    the lookup in the database was found to be {best_match[1]}, \n 
+                    and the total footprint was found to be: {total_footprint_for_ingredient}
+                  """)
+                  
+
     
     def parse_recipe_item(text: str) -> tuple[str,str]:
         print(f"Text in parse_recipe_item: {text}")
@@ -27,25 +38,16 @@ class Utils:
         # print(f"match.group(2): {match.group(2)}")
     #         result.append((match.group(1),match.group(2)))
         return (match.group(1),match.group(2))
-    
-
             
     def get_best_database_match(ingredient: str):
         print(f"ingredient inside get_best_database_match: {ingredient}")
 
-    #     database = ClimateDatabase.getDatabase() #TODO: Not a good idea to get the database everytime?
-    #     ratios = [] # Tuple?
-    #     for i, foodItem in enumerate(database["Produkt"]):
-    #         ratio = fuzz.partial_ratio(text,foodItem)
-    #         ratios.append((foodItem, ratio))
-
-        # best_match : tuple[float,str,float] = () 
         ratios = []
         print(f'ingredient: {ingredient}')       
         for i, fooditem in enumerate(panda_db['product']):
             ratio = fuzz.partial_ratio(ingredient, fooditem) #TODO: Find out which fuzz method is best suited...
             footprint = float(panda_db['footprint'][i])
-            data_tuple = (ratio,fooditem,footprint)
+            data_tuple = (ratio,fooditem,footprint) #TODO make other data structure, e.g. class
             print(f"data_tuple: {data_tuple}")
             ratios.append(data_tuple)
 
@@ -53,8 +55,15 @@ class Utils:
 
         print(f'ratios[-1]: {ratios[-1]}')
 
-    #     return ratios[-5:]
+        return ratios[-1]
 
+    def calculate_footprint_with_amount(amount : str, footprint : float): #Only handles amount = kg as of now
+        pattern = r"^(\d*\.?\d*) (.*)$"
+        match = re.match(pattern, amount)
+        quantity = float(match.group(1))
+        unit = match.group(2)
+
+        return quantity * footprint #Only handles amount = kg as of now
 
         
 

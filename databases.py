@@ -11,19 +11,27 @@ def set_path(file_name):
 dsk_path = set_path("dsk_table.csv")    
 dsk_table = read_csv(dsk_path)
 
-print(f"""
-    panda_db['ID'].dtype: {dsk_table['ID'].dtype} \n 
-    panda_db['kg_co2e_pr_kg'].dtype: {dsk_table['kg_co2e_pr_kg'].dtype} \n 
-    panda_db['product'].dtype: {dsk_table['product'].dtype} \n 
-    """)
+print(f"dsk_table: \n{dsk_table.to_string(index=False)}\n")
+
+# print(f"""
+#     panda_db['ID'].dtype: {dsk_table['ID'].dtype} \n 
+#     panda_db['kg_co2e_pr_kg'].dtype: {dsk_table['kg_co2e_pr_kg'].dtype} \n 
+#     panda_db['product'].dtype: {dsk_table['product'].dtype} \n 
+#     """)
+
+
 
 synonym_table_path = set_path("synonym_table.csv")  
 synonym_table = read_csv(synonym_table_path)
 
-print(f"""
-    synonym_table['ID'].dtype: {synonym_table['ID'].dtype} \n 
-    synonym_table['synonym'].dtype: {synonym_table['synonym'].dtype} \n 
-    """)
+print(f"synonym_table: \n{synonym_table.to_string(index=False)}\n")
+
+# print(f"""
+#     synonym_table['ID'].dtype: {synonym_table['ID'].dtype} \n 
+#     synonym_table['synonym'].dtype: {synonym_table['synonym'].dtype} \n 
+#     """)
 
 conversion_table_path = set_path("conversion_table.csv") 
 conversion_table = read_csv(conversion_table_path)
+
+print(f"conversion_table: \n{conversion_table.to_string(index=False)}\n")

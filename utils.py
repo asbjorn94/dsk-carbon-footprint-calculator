@@ -75,7 +75,11 @@ def get_best_database_match(ingredient: str):
 
     # best_ratio_item = dsk_table.loc[dsk_table['ID'] == best_ratio_id]
 
+    print(f"tuple: {tuple(dsk_table.values[best_ratio_id])}")
+
     (return_id,return_product,return_footprint) = tuple(dsk_table.values[best_ratio_id])
+
+    # print(f"\nBest match: {return_product}, for given ingredient: {ingredient}\n")
 
     # for i, fooditem in enumerate(panda_db['product']):
     #     ratio = fuzz.partial_ratio(ingredient, fooditem) #TODO: Find out which fuzz method is best suited...

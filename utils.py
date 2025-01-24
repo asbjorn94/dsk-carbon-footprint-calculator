@@ -1,4 +1,4 @@
-from panda_database import panda_db
+from databases import panda_db, synonym_table
 
 import re
 from typing import List
@@ -20,7 +20,7 @@ class Utils:
             food_item_footprint = best_match[2]
             (quantity, unit) = Utils.split_into_quantity_and_unit(amount)
             footprint_in_kilograms = Utils.compute_kilograms_from_unit(quantity, unit)
-            total_footprint_for_ingredient = Utils.calculate_footprint_with_amount(footprint_in_kilograms, food_item_footprint)
+            total_footprint_for_ingredient = Utils.round_total_footprint(Utils.calculate_footprint_with_amount(footprint_in_kilograms, food_item_footprint))
 
             # print(f"""
             #         For ingredient (incl amount): {result}, \n
@@ -49,27 +49,68 @@ class Utils:
     def get_best_database_match(ingredient: str):
 
         ratios = []  
-        for i, fooditem in enumerate(panda_db['product']):
-            ratio = fuzz.partial_ratio(ingredient, fooditem) #TODO: Find out which fuzz method is best suited...
-            footprint = float(panda_db['kg_co2e_pr_kg'][i])
-            data_tuple = (ratio,fooditem,footprint) #TODO make other data structure, e.g. class
-            ratios.append(data_tuple)
+        # for i, synonym in enumerate(synonym_table['synonym']):
+        for i, row in synonym_table.iterrows():
+            # id = int(synonym_table['ID'][i])
+            # id = synonym_table.iloc[i, synonym_table.columns.get_loc('ID')]
+            id = row['ID']
+            synonym = row['synonym']
+            print(f"id: {id},\n synonym: {synonym}")
 
-        ratios.sort(key = lambda x: x[0])
+            ratio = fuzz.partial_ratio(ingredient, synonym)
+            ratios.append((id,ratio))
+            # print(f"(id,ratio): {(id,ratio)}")
 
+        ratios.sort(key = lambda x: x[1])
         print(f'Highest ratio: {ratios[-1]}')
+        (best_ratio_id,x) = ratios[-1]
+        print(f"best_ratio_id: {best_ratio_id}")
 
-        return ratios[-1]
+        best_ratio_item = panda_db.loc[panda_db['ID'] == best_ratio_id]
+
+        (return_id,return_product,return_footprint) = tuple(panda_db.values[best_ratio_id])
+
+        # print(f"""
+        #     a: \n{str(a)}\n
+        #     b: \n{str((b))}\n
+        #     c: \n{str((c))}\n
+
+        # """)
+
+
+
+        # print(f"""
+        #     best_ratio_item: \n{str(best_ratio_item)}\n
+        #     best_ratio_item type: \n{str(type(best_ratio_item))}\n
+
+        # """)
+
+        # for i, fooditem in enumerate(panda_db['product']):
+        #     ratio = fuzz.partial_ratio(ingredient, fooditem) #TODO: Find out which fuzz method is best suited...
+        #     footprint = float(panda_db['kg_co2e_pr_kg'][i])
+        #     data_tuple = (ratio,fooditem,footprint) #TODO make other data structure, e.g. class
+        #     ratios.append(data_tuple)
+        # ratios.sort(key = lambda x: x[0])
+
+  
+        # print(f"(best_ratio_id,best_ratio_item['product'],best_ratio_item['kg_co2e_pr_kg']): {(best_ratio_id,best_ratio_item['product'],best_ratio_item['kg_co2e_pr_kg'])}")
+        # return ratios[-1]
+        print(f"(return_id,return_product, return_footprint):\n {(return_id,return_product, return_footprint)}")
+
+        return (return_id,return_product, return_footprint)
     
     @staticmethod
     def compute_kilograms_from_unit(quantity: float, unit : str):
         if unit == "kg":
             return quantity
         elif unit == "g":
-            return quantity/1000
+            return quantity * 0.001
+        else:
+            raise ValueError("The unit used for the ingredient is not recogonized")
+            
     
     @staticmethod
-    def split_into_quantity_and_unit(amount : str):
+    def split_into_quantity_and_unit(amount : str) -> tuple[float,str]:
         pattern = r"^(\d*\.?\d*) (.*)$"
         match = re.match(pattern, amount)
         quantity = float(match.group(1))
@@ -81,6 +122,10 @@ class Utils:
     def calculate_footprint_with_amount(amount : float, footprint : float):
 
         return amount * footprint #Only handles amount = kg as of now
+    
+    def round_total_footprint(number: float) -> float:
+        
+        return round(number,3)
 
     #     # item_alternatives = item.split(" eller ")
     #     item_alternatives = re.split(" eller ", item, flags=re.IGNORECASE)

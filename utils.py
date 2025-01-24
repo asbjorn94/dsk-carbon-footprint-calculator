@@ -11,16 +11,16 @@ class Utils:
         ingredient_footprints = []
         
         for i, item in enumerate(recipe_list):
-            result = Utils.parse_recipe_item(item.get("liElement"))
+            result = parse_recipe_item(item.get("liElement"))
             amount = result[0]
             ingredient = result[1]
 
-            best_match = Utils.get_best_database_match(ingredient)
+            best_match = get_best_database_match(ingredient)
             food_item_name_best_match = best_match[1]
             food_item_footprint = best_match[2]
-            (quantity, unit) = Utils.split_into_quantity_and_unit(amount)
-            footprint_in_kilograms = Utils.compute_kilograms_from_unit(quantity, unit)
-            total_footprint_for_ingredient = Utils.round_total_footprint(Utils.calculate_footprint_with_amount(footprint_in_kilograms, food_item_footprint))
+            (quantity, unit) = split_into_quantity_and_unit(amount)
+            footprint_in_kilograms = compute_kilograms_from_unit(quantity, unit)
+            total_footprint_for_ingredient = round_total_footprint(calculate_footprint_with_amount(footprint_in_kilograms, food_item_footprint))
 
             # print(f"""
             #         For ingredient (incl amount): {result}, \n
@@ -37,95 +37,89 @@ class Utils:
 
         return ingredient_footprints      
 
-    @staticmethod
-    def parse_recipe_item(text: str) -> tuple[str,str]:
 
-        pattern = r"^([\d]+[.,]?[\d]*\s\w+)?\s(.*)$"
-        match = re.match(pattern, text)
+def parse_recipe_item(text: str) -> tuple[str,str]:
 
-        return (match.group(1),match.group(2))
+    pattern = r"^([\d]+[.,]?[\d]*\s\w+)?\s(.*)$"
+    match = re.match(pattern, text)
 
-    @staticmethod       
-    def get_best_database_match(ingredient: str):
+    return (match.group(1),match.group(2))
 
-        ratios = []  
-        # for i, synonym in enumerate(synonym_table['synonym']):
-        for i, row in synonym_table.iterrows():
-            # id = int(synonym_table['ID'][i])
-            # id = synonym_table.iloc[i, synonym_table.columns.get_loc('ID')]
-            id = row['ID']
-            synonym = row['synonym']
-            print(f"id: {id},\n synonym: {synonym}")
+      
+def get_best_database_match(ingredient: str):
 
-            ratio = fuzz.partial_ratio(ingredient, synonym)
-            ratios.append((id,ratio))
-            # print(f"(id,ratio): {(id,ratio)}")
+    ratios = []  
+    # for i, synonym in enumerate(synonym_table['synonym']):
+    for i, row in synonym_table.iterrows():
+        # id = int(synonym_table['ID'][i])
+        # id = synonym_table.iloc[i, synonym_table.columns.get_loc('ID')]
+        id = row['ID']
+        synonym = row['synonym']
+        print(f"id: {id},\n synonym: {synonym}")
 
-        ratios.sort(key = lambda x: x[1])
-        print(f'Highest ratio: {ratios[-1]}')
-        (best_ratio_id,x) = ratios[-1]
-        print(f"best_ratio_id: {best_ratio_id}")
+        ratio = fuzz.partial_ratio(ingredient, synonym)
+        ratios.append((id,ratio))
+        # print(f"(id,ratio): {(id,ratio)}")
 
-        best_ratio_item = dsk_table.loc[dsk_table['ID'] == best_ratio_id]
+    ratios.sort(key = lambda x: x[1])
+    print(f'Highest ratio: {ratios[-1]}')
+    (best_ratio_id,x) = ratios[-1]
+    print(f"best_ratio_id: {best_ratio_id}")
 
-        (return_id,return_product,return_footprint) = tuple(dsk_table.values[best_ratio_id])
+    # best_ratio_item = dsk_table.loc[dsk_table['ID'] == best_ratio_id]
 
-        # print(f"""
-        #     a: \n{str(a)}\n
-        #     b: \n{str((b))}\n
-        #     c: \n{str((c))}\n
+    (return_id,return_product,return_footprint) = tuple(dsk_table.values[best_ratio_id])
 
-        # """)
+    # print(f"""
+    #     a: \n{str(a)}\n
+    #     b: \n{str((b))}\n
+    #     c: \n{str((c))}\n
+
+    # """)
 
 
 
-        # print(f"""
-        #     best_ratio_item: \n{str(best_ratio_item)}\n
-        #     best_ratio_item type: \n{str(type(best_ratio_item))}\n
+    # for i, fooditem in enumerate(panda_db['product']):
+    #     ratio = fuzz.partial_ratio(ingredient, fooditem) #TODO: Find out which fuzz method is best suited...
+    #     footprint = float(panda_db['kg_co2e_pr_kg'][i])
+    #     data_tuple = (ratio,fooditem,footprint) #TODO make other data structure, e.g. class
+    #     ratios.append(data_tuple)
+    # ratios.sort(key = lambda x: x[0])
 
-        # """)
 
-        # for i, fooditem in enumerate(panda_db['product']):
-        #     ratio = fuzz.partial_ratio(ingredient, fooditem) #TODO: Find out which fuzz method is best suited...
-        #     footprint = float(panda_db['kg_co2e_pr_kg'][i])
-        #     data_tuple = (ratio,fooditem,footprint) #TODO make other data structure, e.g. class
-        #     ratios.append(data_tuple)
-        # ratios.sort(key = lambda x: x[0])
+    # print(f"(best_ratio_id,best_ratio_item['product'],best_ratio_item['kg_co2e_pr_kg']): {(best_ratio_id,best_ratio_item['product'],best_ratio_item['kg_co2e_pr_kg'])}")
+    # return ratios[-1]
+    print(f"(return_id,return_product, return_footprint):\n {(return_id,return_product, return_footprint)}")
 
-  
-        # print(f"(best_ratio_id,best_ratio_item['product'],best_ratio_item['kg_co2e_pr_kg']): {(best_ratio_id,best_ratio_item['product'],best_ratio_item['kg_co2e_pr_kg'])}")
-        # return ratios[-1]
-        print(f"(return_id,return_product, return_footprint):\n {(return_id,return_product, return_footprint)}")
-
-        return (return_id,return_product, return_footprint)
+    return (return_id,return_product, return_footprint)
     
-    @staticmethod
-    def compute_kilograms_from_unit(quantity: float, unit : str):
-        if unit == "kg":
-            return quantity
-        elif unit == "g":
-            return quantity * 0.001
-        else:
-            raise ValueError("The unit used for the ingredient is not recogonized")
+
+def compute_kilograms_from_unit(quantity: float, unit : str):
+    if unit == "kg":
+        return quantity
+    elif unit == "g":
+        return quantity * 0.001
+    else:
+        raise ValueError("The unit used for the ingredient is not recogonized")
             
     
-    @staticmethod
-    def split_into_quantity_and_unit(amount : str) -> tuple[float,str]:
-        pattern = r"^(\d*\.?\d*) (.*)$"
-        match = re.match(pattern, amount)
-        quantity = float(match.group(1))
-        unit = match.group(2)
 
-        return (quantity,unit)
+def split_into_quantity_and_unit(amount : str) -> tuple[float,str]:
+    pattern = r"^(\d*\.?\d*) (.*)$"
+    match = re.match(pattern, amount)
+    quantity = float(match.group(1))
+    unit = match.group(2)
 
-    @staticmethod
-    def calculate_footprint_with_amount(amount : float, footprint : float):
+    return (quantity,unit)
 
-        return amount * footprint #Only handles amount = kg as of now
+
+def calculate_footprint_with_amount(amount : float, footprint : float):
+
+    return amount * footprint #Only handles amount = kg as of now
     
-    def round_total_footprint(number: float) -> float:
-        
-        return round(number,3)
+def round_total_footprint(number: float) -> float:
+    
+    return round(number,3)
 
     #     # item_alternatives = item.split(" eller ")
     #     item_alternatives = re.split(" eller ", item, flags=re.IGNORECASE)

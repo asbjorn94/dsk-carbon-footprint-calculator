@@ -1,4 +1,4 @@
-from databases import panda_db, synonym_table
+from databases import dsk_table, synonym_table
 
 import re
 from typing import List
@@ -66,9 +66,9 @@ class Utils:
         (best_ratio_id,x) = ratios[-1]
         print(f"best_ratio_id: {best_ratio_id}")
 
-        best_ratio_item = panda_db.loc[panda_db['ID'] == best_ratio_id]
+        best_ratio_item = dsk_table.loc[dsk_table['ID'] == best_ratio_id]
 
-        (return_id,return_product,return_footprint) = tuple(panda_db.values[best_ratio_id])
+        (return_id,return_product,return_footprint) = tuple(dsk_table.values[best_ratio_id])
 
         # print(f"""
         #     a: \n{str(a)}\n

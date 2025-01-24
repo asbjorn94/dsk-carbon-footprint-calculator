@@ -4,12 +4,12 @@ from pandas import read_csv
 basedir = os.path.dirname(__file__)
 
 dsk_path = os.path.join(basedir,"res/DSK_tiny_formatted.csv")    
-panda_db = read_csv(dsk_path)
+dsk_table = read_csv(dsk_path)
 
 print(f"""
-    panda_db['ID'].dtype: {panda_db['ID'].dtype} \n 
-    panda_db['kg_co2e_pr_kg'].dtype: {panda_db['kg_co2e_pr_kg'].dtype} \n 
-    panda_db['product'].dtype: {panda_db['product'].dtype} \n 
+    panda_db['ID'].dtype: {dsk_table['ID'].dtype} \n 
+    panda_db['kg_co2e_pr_kg'].dtype: {dsk_table['kg_co2e_pr_kg'].dtype} \n 
+    panda_db['product'].dtype: {dsk_table['product'].dtype} \n 
     """)
 
 synonym_table_path = os.path.join(basedir,"res/synonym_table.csv") 

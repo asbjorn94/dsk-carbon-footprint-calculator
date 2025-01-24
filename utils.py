@@ -1,56 +1,85 @@
 from databases import dsk_table, synonym_table, conversion_table
 
+from errors import UnitNotRecognizedError, IngredientNotFoundError,QuantityNotStatedError
 import re
 from typing import List
 from thefuzz import fuzz
+
+ratio_threshold = 50
 
 class Utils:
     
     @staticmethod
     def parse_recipe_items(recipe_list: List[dict]) -> list:
-        ingredient_footprints = []
+        ingredient_footprints = {
+            "foodItemFootprints" : [],
+            "unitsNotRecognized" : [],
+            "quantityNotStated" : [],
+            "foodItemsNotFound" : []
+        }
         
         for i, item in enumerate(recipe_list):
-            (amount,ingredient) = parse_recipe_item(item.get("liElement"))
-
-            (ingredient_id, ingredient_name, ingredient_footprint) = get_best_database_match(ingredient)
-            # food_item_name_best_match = best_match[1]
-            # food_item_footprint = best_match[2]
-            (quantity, unit) = split_into_quantity_and_unit(amount)
-            amount_in_kg = compute_kilograms_from_unit(ingredient_id, quantity, unit)
-            total_footprint_for_ingredient = calculate_footprint_with_amount(amount_in_kg, ingredient_footprint)
-            total_footprint_for_ingredient = round_total_footprint(total_footprint_for_ingredient)
-
-            # print(f"""
-            #         For ingredient (incl amount): {result}, \n
-            #         the lookup in the database was found to be {best_match[1]}, \n 
-            #         and the total footprint was found to be: {total_footprint_for_ingredient}
-            #       """)
-
-            ingredient_details = {
-                "foodItemName": ingredient_name,
-                "totalFootprintForIngredient": total_footprint_for_ingredient   
-            }
-
-            ingredient_footprints.append(ingredient_details)
-
+            
+            try:
+                # (amount, ingredient) = parse_recipe_item(item.get("liElement"))
+                (amount, ingredient_id, ingredient, ingredient_name, ingredient_footprint) = parse_recipe_item(item.get("liElement"))
+                if amount == None:
+                    raise QuantityNotStatedError("The quantity for the ingredient has not been stated. Alternatively, the software might not have been able to recognize the quanity stated, if any.")
+                
+                # (ingredient_id, ingredient_name, ingredient_footprint) = get_best_database_match(ingredient)
+                # food_item_name_best_match = best_match[1]
+                # food_item_footprint = best_match[2]
+                (quantity, unit) = split_into_quantity_and_unit(amount)
+                amount_in_kg = compute_kilograms_from_unit(ingredient_id, quantity, unit)
+                total_footprint_for_ingredient = calculate_footprint_with_amount(amount_in_kg, ingredient_footprint)
+                total_footprint_for_ingredient = round_total_footprint(total_footprint_for_ingredient)
+            
+            except IngredientNotFoundError as e:
+                print(e)
+                ingredient_footprints['foodItemsNotFound'].append({
+                    "foodItemName": ingredient_name, #TODO: Seems redundant
+                    "infoMessage": f'Ingrediensen, "{ingredient}", kunne ikke findes i databasen.'    
+                })
+            except UnitNotRecognizedError as e:
+                print(e)  
+                ingredient_footprints['unitsNotRecognized'].append({
+                    "foodItemName": ingredient_name, #TODO: Seems redundant
+                    "infoMessage": f'Måleenheden, "{unit}", kunne ikke genkendes.'
+                })
+            except QuantityNotStatedError as e:
+                print(e)
+                ingredient_footprints['quantityNotStated'].append({
+                    "foodItemName": ingredient_name, #TODO: Seems redundant
+                    "infoMessage": f'Ingen mængdeangivelse kunne detekteres for den givne ingrediens'
+                })
+            else:
+                ingredient_footprints['foodItemFootprints'].append({
+                    "foodItemName": ingredient_name,
+                    "totalFootprintForIngredient": total_footprint_for_ingredient   
+                })
+                # print(f"""
+                #         For ingredient (incl amount): {result}, \n
+                #         the lookup in the database was found to be {best_match[1]}, \n 
+                #         and the total footprint was found to be: {total_footprint_for_ingredient}
+                #       """)
         return ingredient_footprints      
 
 
-def parse_recipe_item(text: str) -> tuple[str,str]:
+def parse_recipe_item(text: str) -> tuple[int,str,str,str]:
 
     amount_pattern = "([\d]+[.,]?[\d]*\s\w+)"
     ingredient_pattern = "(.*)"
-    pattern = r"^" + amount_pattern + "?\s" + ingredient_pattern + "$"
+    pattern = r"^" + amount_pattern + "?\s?" + ingredient_pattern + "$"
     # pattern = r"^([\d]+[.,]?[\d]*\s\w+)?\s(.*)$"
     match = re.match(pattern, text)
 
-    amount = match.group(1)
     ingredient = match.group(2)
+    (ingredient_id, ingredient_name, ingredient_footprint) = get_best_database_match(ingredient)
+    amount = match.group(1)
 
     # (quantity, unit) = split_into_quantity_and_unit(amount)
-
-    return (amount,ingredient)
+    return (amount, ingredient_id, ingredient, ingredient_name, ingredient_footprint)
+    # return (amount,ingredient)
 
       
 def get_best_database_match(ingredient: str):
@@ -65,17 +94,21 @@ def get_best_database_match(ingredient: str):
         # print(f"id: {id},\n synonym: {synonym}")
 
         ratio = fuzz.partial_ratio(ingredient, synonym)
+
         ratios.append((id,ratio))
         # print(f"(id,ratio): {(id,ratio)}")
 
     ratios.sort(key = lambda x: x[1])
     # print(f'Highest ratio: {ratios[-1]}')
-    (best_ratio_id,x) = ratios[-1]
+    (best_ratio_id,best_ratio) = ratios[-1]
     # print(f"best_ratio_id: {best_ratio_id}")
+
+    if ingredient_is_not_found(best_ratio):
+        raise IngredientNotFoundError(f"The ingredient could not be found. Ratio from fuzzy string matching was below the ratio threshold ({ratio_threshold})")
 
     # best_ratio_item = dsk_table.loc[dsk_table['ID'] == best_ratio_id]
 
-    print(f"tuple: {tuple(dsk_table.values[best_ratio_id])}")
+    print(f"Ratio: {best_ratio}, tuple: {tuple(dsk_table.values[best_ratio_id])}")
 
     (return_id,return_product,return_footprint) = tuple(dsk_table.values[best_ratio_id])
 
@@ -90,6 +123,12 @@ def get_best_database_match(ingredient: str):
 
     return (return_id,return_product, return_footprint)
     
+#Should contain logic that determines if ingredient is found or not
+def ingredient_is_not_found(best_ratio : int) -> bool:
+
+    return best_ratio < ratio_threshold
+
+
 
 def compute_kilograms_from_unit(ingredient_id : int, quantity : float, unit : str) -> float:
     if unit == "kg":
@@ -99,8 +138,9 @@ def compute_kilograms_from_unit(ingredient_id : int, quantity : float, unit : st
     else: #Unit needs to be translated into kg
         try:
             return (quantity * get_conversion_factor(ingredient_id, unit))
-        except:
-            raise ValueError("The unit used for the ingredient is not recognized") 
+        except Exception as e:
+            print(e)
+            raise UnitNotRecognizedError("The unit used for the ingredient is not recognized") 
 
 
 def get_conversion_factor(ingredient_id : int, unit : str) -> float:

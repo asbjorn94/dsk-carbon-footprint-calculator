@@ -9,4 +9,4 @@ df.rename(columns={'Produkt': 'product', 'Total kg CO2e/kg': 'kg_co2e_pr_kg'}, i
 df['kg_co2e_pr_kg'] = df['kg_co2e_pr_kg'].str.replace(",",".")
 df = df.astype({'product': str, 'kg_co2e_pr_kg': float})
 df.index.name = "ID"
-df.to_csv(os.path.join(basedir,"DSK_tiny_formatted.csv"))
+df.to_csv(os.path.join(basedir,"dsk_table.csv"))

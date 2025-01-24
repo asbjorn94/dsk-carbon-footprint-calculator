@@ -1,4 +1,4 @@
-from databases import dsk_table, synonym_table
+from databases import dsk_table, synonym_table, conversion_table
 
 import re
 from typing import List
@@ -11,16 +11,15 @@ class Utils:
         ingredient_footprints = []
         
         for i, item in enumerate(recipe_list):
-            result = parse_recipe_item(item.get("liElement"))
-            amount = result[0]
-            ingredient = result[1]
+            (amount,ingredient) = parse_recipe_item(item.get("liElement"))
 
-            best_match = get_best_database_match(ingredient)
-            food_item_name_best_match = best_match[1]
-            food_item_footprint = best_match[2]
+            (ingredient_id, ingredient_name, ingredient_footprint) = get_best_database_match(ingredient)
+            # food_item_name_best_match = best_match[1]
+            # food_item_footprint = best_match[2]
             (quantity, unit) = split_into_quantity_and_unit(amount)
-            footprint_in_kilograms = compute_kilograms_from_unit(quantity, unit)
-            total_footprint_for_ingredient = round_total_footprint(calculate_footprint_with_amount(footprint_in_kilograms, food_item_footprint))
+            amount_in_kg = compute_kilograms_from_unit(ingredient_id, quantity, unit)
+            total_footprint_for_ingredient = calculate_footprint_with_amount(amount_in_kg, ingredient_footprint)
+            total_footprint_for_ingredient = round_total_footprint(total_footprint_for_ingredient)
 
             # print(f"""
             #         For ingredient (incl amount): {result}, \n
@@ -29,7 +28,7 @@ class Utils:
             #       """)
 
             ingredient_details = {
-                "foodItemName": food_item_name_best_match,
+                "foodItemName": ingredient_name,
                 "totalFootprintForIngredient": total_footprint_for_ingredient   
             }
 
@@ -40,10 +39,18 @@ class Utils:
 
 def parse_recipe_item(text: str) -> tuple[str,str]:
 
-    pattern = r"^([\d]+[.,]?[\d]*\s\w+)?\s(.*)$"
+    amount_pattern = "([\d]+[.,]?[\d]*\s\w+)"
+    ingredient_pattern = "(.*)"
+    pattern = r"^" + amount_pattern + "?\s" + ingredient_pattern + "$"
+    # pattern = r"^([\d]+[.,]?[\d]*\s\w+)?\s(.*)$"
     match = re.match(pattern, text)
 
-    return (match.group(1),match.group(2))
+    amount = match.group(1)
+    ingredient = match.group(2)
+
+    # (quantity, unit) = split_into_quantity_and_unit(amount)
+
+    return (amount,ingredient)
 
       
 def get_best_database_match(ingredient: str):
@@ -55,29 +62,20 @@ def get_best_database_match(ingredient: str):
         # id = synonym_table.iloc[i, synonym_table.columns.get_loc('ID')]
         id = row['ID']
         synonym = row['synonym']
-        print(f"id: {id},\n synonym: {synonym}")
+        # print(f"id: {id},\n synonym: {synonym}")
 
         ratio = fuzz.partial_ratio(ingredient, synonym)
         ratios.append((id,ratio))
         # print(f"(id,ratio): {(id,ratio)}")
 
     ratios.sort(key = lambda x: x[1])
-    print(f'Highest ratio: {ratios[-1]}')
+    # print(f'Highest ratio: {ratios[-1]}')
     (best_ratio_id,x) = ratios[-1]
-    print(f"best_ratio_id: {best_ratio_id}")
+    # print(f"best_ratio_id: {best_ratio_id}")
 
     # best_ratio_item = dsk_table.loc[dsk_table['ID'] == best_ratio_id]
 
     (return_id,return_product,return_footprint) = tuple(dsk_table.values[best_ratio_id])
-
-    # print(f"""
-    #     a: \n{str(a)}\n
-    #     b: \n{str((b))}\n
-    #     c: \n{str((c))}\n
-
-    # """)
-
-
 
     # for i, fooditem in enumerate(panda_db['product']):
     #     ratio = fuzz.partial_ratio(ingredient, fooditem) #TODO: Find out which fuzz method is best suited...
@@ -86,23 +84,25 @@ def get_best_database_match(ingredient: str):
     #     ratios.append(data_tuple)
     # ratios.sort(key = lambda x: x[0])
 
-
-    # print(f"(best_ratio_id,best_ratio_item['product'],best_ratio_item['kg_co2e_pr_kg']): {(best_ratio_id,best_ratio_item['product'],best_ratio_item['kg_co2e_pr_kg'])}")
-    # return ratios[-1]
-    print(f"(return_id,return_product, return_footprint):\n {(return_id,return_product, return_footprint)}")
-
     return (return_id,return_product, return_footprint)
     
 
-def compute_kilograms_from_unit(quantity: float, unit : str):
+def compute_kilograms_from_unit(ingredient_id : int, quantity : float, unit : str) -> float:
     if unit == "kg":
         return quantity
     elif unit == "g":
         return quantity * 0.001
-    else:
-        raise ValueError("The unit used for the ingredient is not recogonized")
-            
-    
+    else: #Unit needs to be translated into kg
+        try:
+            return (quantity * get_conversion_factor(ingredient_id, unit))
+        except:
+            raise ValueError("The unit used for the ingredient is not recognized") 
+
+
+def get_conversion_factor(ingredient_id : int, unit : str) -> float:
+
+    return conversion_table.loc[conversion_table['ID'].eq(ingredient_id) & conversion_table['unit'].eq(unit)]['kg_conversion_factor'].item()
+
 
 def split_into_quantity_and_unit(amount : str) -> tuple[float,str]:
     pattern = r"^(\d*\.?\d*) (.*)$"
@@ -113,10 +113,12 @@ def split_into_quantity_and_unit(amount : str) -> tuple[float,str]:
     return (quantity,unit)
 
 
+
 def calculate_footprint_with_amount(amount : float, footprint : float):
 
     return amount * footprint #Only handles amount = kg as of now
-    
+
+
 def round_total_footprint(number: float) -> float:
     
     return round(number,3)

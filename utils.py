@@ -5,7 +5,7 @@ import re
 from typing import List
 from thefuzz import fuzz
 
-ratio_threshold = 50
+ratio_threshold = 60
 
 class Utils:
     
@@ -34,11 +34,11 @@ class Utils:
                 total_footprint_for_ingredient = calculate_footprint_with_amount(amount_in_kg, ingredient_footprint)
                 total_footprint_for_ingredient = round_total_footprint(total_footprint_for_ingredient)
             
-            except IngredientNotFoundError as e:
-                print(e)
+            except IngredientNotFoundError as e:     
+                print(e.error_msg)
                 ingredient_footprints['foodItemsNotFound'].append({
-                    "foodItemName": ingredient_name, #TODO: Seems redundant
-                    "infoMessage": f'Ingrediensen, "{ingredient}", kunne ikke findes i databasen.'    
+                    "foodItemName": e.ingredient, #TODO: Seems redundant
+                    "infoMessage": f'Ingrediensen, "{e.ingredient}", kunne ikke findes i databasen.'    
                 })
             except UnitNotRecognizedError as e:
                 print(e)  
@@ -104,7 +104,8 @@ def get_best_database_match(ingredient: str):
     # print(f"best_ratio_id: {best_ratio_id}")
 
     if ingredient_is_not_found(best_ratio):
-        raise IngredientNotFoundError(f"The ingredient could not be found. Ratio from fuzzy string matching was below the ratio threshold ({ratio_threshold})")
+        error_msg = f"The ingredient could not be found. Ratio from fuzzy string matching was below the ratio threshold ({ratio_threshold}"
+        raise IngredientNotFoundError(error_msg, ingredient)
 
     # best_ratio_item = dsk_table.loc[dsk_table['ID'] == best_ratio_id]
 

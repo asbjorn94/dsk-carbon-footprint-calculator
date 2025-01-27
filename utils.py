@@ -11,18 +11,18 @@ class Utils:
     
     @staticmethod
     def parse_recipe_items(recipe_list: List[dict]) -> list:
-        ingredient_footprints = {
-            "foodItemFootprints" : [],
+        response = {
+            "recipeitemFootprintCalculated" : [],
             "unitsNotRecognized" : [],
             "quantityNotStated" : [],
-            "foodItemsNotFound" : []
+            "foodProductsNotFound" : []
         }
         
         for i, item in enumerate(recipe_list):
             
             try:
                 # (amount, ingredient) = parse_recipe_item(item.get("liElement"))
-                (amount, ingredient_id, ingredient, ingredient_name, ingredient_footprint) = parse_recipe_item(item.get("liElement"))
+                (amount, ingredient_id, ingredient, food_product, food_product_footprint) = parse_recipe_item(item.get("liElement"))
                 if amount == None:
                     raise QuantityNotStatedError("The quantity for the ingredient has not been stated. Alternatively, the software might not have been able to recognize the quanity stated, if any.")
                 
@@ -31,38 +31,40 @@ class Utils:
                 # food_item_footprint = best_match[2]
                 (quantity, unit) = split_into_quantity_and_unit(amount)
                 amount_in_kg = compute_kilograms_from_unit(ingredient_id, quantity, unit)
-                total_footprint_for_ingredient = calculate_footprint_with_amount(amount_in_kg, ingredient_footprint)
-                total_footprint_for_ingredient = round_total_footprint(total_footprint_for_ingredient)
+                recipeitem_footprint = calculate_footprint_with_amount(amount_in_kg, food_product_footprint)
+                recipeitem_footprint = round_total_footprint(recipeitem_footprint)
             
             except IngredientNotFoundError as e:     
                 print(e.error_msg)
-                ingredient_footprints['foodItemsNotFound'].append({
-                    "foodItemName": e.ingredient, #TODO: Seems redundant
-                    "infoMessage": f'Ingrediensen, "{e.ingredient}", kunne ikke findes i databasen.'    
+                response['foodProductsNotFound'].append({
+                    "ingredient": e.ingredient, 
+                    "errorMessage": f'Ingrediensen, "{e.ingredient}", kunne ikke findes i databasen.'    
                 })
             except UnitNotRecognizedError as e:
                 print(e)  
-                ingredient_footprints['unitsNotRecognized'].append({
-                    "foodItemName": ingredient_name, #TODO: Seems redundant
-                    "infoMessage": f'Måleenheden, "{unit}", kunne ikke genkendes.'
+                response['unitsNotRecognized'].append({
+                    "foodProduct": food_product, #TODO: Seems redundant
+                    "errorMessage": f'Måleenheden, "{unit}", kunne ikke genkendes.',
+                    "foodProductFootprint": food_product_footprint
                 })
             except QuantityNotStatedError as e:
                 print(e)
-                ingredient_footprints['quantityNotStated'].append({
-                    "foodItemName": ingredient_name, #TODO: Seems redundant
-                    "infoMessage": f'Ingen mængdeangivelse kunne detekteres for den givne ingrediens'
+                response['quantityNotStated'].append({
+                    "foodProduct": food_product, #TODO: Seems redundant - maybe merge into function that is called both when QuantityNotStatedError and UnitNotRecognizedError is raised
+                    "errorMessage": f'Ingen mængdeangivelse kunne detekteres for den givne ingrediens',
+                    "foodProductFootprint": food_product_footprint
                 })
             else:
-                ingredient_footprints['foodItemFootprints'].append({
-                    "foodItemName": ingredient_name,
-                    "totalFootprintForIngredient": total_footprint_for_ingredient   
+                response['recipeitemFootprintCalculated'].append({
+                    "foodProduct": food_product, 
+                    "recipeitemFootprint": recipeitem_footprint   
                 })
                 # print(f"""
                 #         For ingredient (incl amount): {result}, \n
                 #         the lookup in the database was found to be {best_match[1]}, \n 
                 #         and the total footprint was found to be: {total_footprint_for_ingredient}
                 #       """)
-        return ingredient_footprints      
+        return response      
 
 
 def parse_recipe_item(text: str) -> tuple[int,str,str,str]:

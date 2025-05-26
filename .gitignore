@@ -6,6 +6,7 @@ jupyter_test_env
 *.numbers
 *.sh
 *.xlsx
+*.env
 
 local_config.py
 .venv

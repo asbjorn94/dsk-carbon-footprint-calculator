@@ -91,8 +91,8 @@ def get_best_database_match(ingredient: str):
     for i, row in synonym_table.iterrows():
         # id = int(synonym_table['ID'][i])
         # id = synonym_table.iloc[i, synonym_table.columns.get_loc('ID')]
-        id = row['ID']
-        synonym = row['synonym']
+        id = row['product_id']
+        synonym = row['product_name']
         # print(f"id: {id},\n synonym: {synonym}")
 
         ratio = fuzz.partial_ratio(ingredient, synonym)
@@ -111,9 +111,11 @@ def get_best_database_match(ingredient: str):
 
     # best_ratio_item = dsk_table.loc[dsk_table['ID'] == best_ratio_id]
 
-    print(f"Ratio: {best_ratio}, tuple: {tuple(dsk_table.values[best_ratio_id])}")
+    return_tuple = dsk_table.loc[dsk_table['id'] == best_ratio_id].values[0]
 
-    (return_id,return_product,return_footprint) = tuple(dsk_table.values[best_ratio_id])
+    print(f"Ratio: {best_ratio}, tuple: {tuple(return_tuple)}")
+
+    (return_id,return_product,return_footprint) = tuple(return_tuple)
 
     # print(f"\nBest match: {return_product}, for given ingredient: {ingredient}\n")
 

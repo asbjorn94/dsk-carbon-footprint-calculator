@@ -150,7 +150,7 @@ def compute_kilograms_from_unit(ingredient_id : int, quantity : float, unit : st
 
 def get_conversion_factor(ingredient_id : int, unit : str) -> float:
 
-    return conversion_table.loc[conversion_table['ID'].eq(ingredient_id) & conversion_table['unit'].eq(unit)]['kg_conversion_factor'].item()
+    return conversion_table.loc[conversion_table['product_id'].eq(ingredient_id) & conversion_table['unit'].eq(unit)]['kg_conversion_factor'].item()
 
 
 def split_into_quantity_and_unit(amount : str) -> tuple[float,str]:

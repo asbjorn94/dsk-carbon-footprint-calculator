@@ -14,10 +14,10 @@ load_dotenv()
 
 # Database connect
 db = mysql.connector.connect(
-    host = os.environ.get('dsk_mysql_host'),
-    user = os.environ.get('dsk_mysql_user'),
-    password = os.environ.get('dsk_mysql_pwd'),
-    database = os.environ.get('dsk_mysql_database')
+    host = os.getenv('dsk_mysql_host'),
+    user = os.getenv('dsk_mysql_user'),
+    password = os.getenv('dsk_mysql_pwd'),
+    database = os.getenv('dsk_mysql_database')
 ) 
 
 cursor = db.cursor()

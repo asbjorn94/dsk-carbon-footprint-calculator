@@ -1,6 +1,6 @@
-from databases import dsk_table, synonym_table, conversion_table
+from .databases import dsk_table, synonym_table, conversion_table
 
-from errors import UnitNotRecognizedError, IngredientNotFoundError,QuantityNotStatedError
+from .errors import UnitNotRecognizedError, IngredientNotFoundError,QuantityNotStatedError
 import re
 from typing import List
 from thefuzz import fuzz

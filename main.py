@@ -1,7 +1,7 @@
 from flask import request, jsonify
-from config import app, db
+from .config import app, db
 import json
-from utils import Utils
+from .utils import Utils
 
 @app.route("/get_footprint", methods=["POST"])
 def get_footprint():

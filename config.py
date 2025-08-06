@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from local_config import sqllite_dir
+from .local_config import sqllite_dir
 
 app = Flask(__name__)
 CORS(app)

@@ -47,9 +47,9 @@ cursor.close()
 db.close()
 
 #Prints of databases
-print(dsk_table)
-print(f"synonym_table: \n{synonym_table.to_string(index=False)}\n")
-print(f"conversion_table: \n{conversion_table.to_string(index=False)}\n")
+# print(dsk_table)
+# print(f"synonym_table: \n{synonym_table.to_string(index=False)}\n")
+# print(f"conversion_table: \n{conversion_table.to_string(index=False)}\n")
 
 
 # Print the DataFrame

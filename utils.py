@@ -5,7 +5,7 @@ import re
 from typing import List
 from thefuzz import fuzz
 
-ratio_threshold = 60
+ratio_threshold = 80
 
 class Utils:
     
@@ -83,6 +83,9 @@ def parse_recipe_item(text: str) -> tuple[int,str,str,str]:
     return (amount, ingredient_id, ingredient, ingredient_name, ingredient_footprint)
     # return (amount,ingredient)
 
+def split_ingredient_string(ingredient : str):
+    ingredient = ingredient.replace(",", "").lower()
+    return ingredient.split(" ")
       
 def get_best_database_match(ingredient: str):
 
@@ -95,13 +98,18 @@ def get_best_database_match(ingredient: str):
         synonym = row['product_name']
         # print(f"id: {id},\n synonym: {synonym}")
 
-        ratio = fuzz.partial_ratio(ingredient, synonym)
+        ratio = fuzz.token_set_ratio(ingredient, synonym)
+
+        split_synonym = split_ingredient_string(synonym)     
+        if split_synonym[0] == ingredient:
+            ratio += 100 # If the ingredient is a perfect match on the first word of the synonym, reward it with 100 points
 
         ratios.append((id,ratio))
         # print(f"(id,ratio): {(id,ratio)}")
 
     ratios.sort(key = lambda x: x[1])
     # print(f'Highest ratio: {ratios[-1]}')
+    print(f"Top 10 ratios: {ratios[-10:]}")
     (best_ratio_id,best_ratio) = ratios[-1]
     # print(f"best_ratio_id: {best_ratio_id}")
 

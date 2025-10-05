@@ -8,7 +8,8 @@ from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
-from source.databases import insert_records_into_table
+from source.databases import insert_records_into_table, dsk_table
+from thefuzz import fuzz
 
 #DATA EXTRACTION ========================================================================================================================
 
@@ -225,6 +226,49 @@ def select_data(df : pd.DataFrame) -> pd.DataFrame:
     result = df[df['Enhed'].isin(selected_units)]
     
     return result
+
+#DATA MAPPING ========================================================================================================================
+def enable_word_comparability(s : str):
+    s = s.lower()
+    s = s.replace(",","")
+    word_list = s.split(" ")
+    return word_list
+
+def map_to_dsk_items(df : pd.DataFrame) -> pd.DataFrame:
+    #To append DSK data
+    merged_df = df
+
+    #Insert new columns
+    merged_df[["DSK_id","DSK_product"]] = pd.NA
+
+    #Iterate through dataframe to match with food item from DSK
+    for i, conv_item in merged_df.iterrows():
+        
+        #Ratio, id, dsk_name
+        highest_ratio = (0, pd.NA, pd.NA)
+        conv_item_words : str = enable_word_comparability(conv_item['Madvare'])
+        
+        for j, dsk_item in dsk_table.iterrows():
+            
+            dsk_item_words : str = enable_word_comparability(dsk_item['product'])
+
+            #Minimum requirement: One word overlap
+            if any(i in conv_item_words for i in dsk_item_words):
+                #If two lists have overlapping word, evaluate ratio
+                ratio = fuzz.token_set_ratio(conv_item['Madvare'], dsk_item['product'])
+
+                #If higher than the current highest, update the highest ratio
+                if ratio > highest_ratio[0]:
+                    highest_ratio = (ratio, dsk_item['id'], dsk_item['product'])
+            else: #Otherwise ignore
+                continue
+
+
+        #Set the highest ratio in the merged_df
+        merged_df.at[i,'DSK_id'] = highest_ratio[1]        
+        merged_df.at[i,'DSK_product'] = highest_ratio[2]
+
+    return merged_df
 
 #DATA EXPORT ========================================================================================================================
 def export_data(data : pd.DataFrame, out_dir, to_database=False) -> None:

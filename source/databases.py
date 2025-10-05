@@ -23,6 +23,10 @@ def insert_records_into_table(dataframe, table_name="conversion_table2"):
     with engine.connect() as connection:
         dataframe.to_sql(table_name, connection, if_exists="replace", index=False)
 
+def insert_records_into_dsk_table_orig(dataframe, table_name="carbon_footprint_detailed"):
+    with engine.connect() as connection:
+        dataframe.to_sql(table_name, connection, if_exists="replace", index=False)
+
 dsk_table = fetch_table("carbon_footprint")
 synonym_table = fetch_table("synonym_table")
 conversion_table = fetch_table("conversion_table")

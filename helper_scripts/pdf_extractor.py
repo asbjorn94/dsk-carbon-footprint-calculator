@@ -263,10 +263,12 @@ def map_to_dsk_items(df : pd.DataFrame) -> pd.DataFrame:
             else: #Otherwise ignore
                 continue
 
-
-        #Set the highest ratio in the merged_df
-        merged_df.at[i,'DSK_id'] = highest_ratio[1]        
-        merged_df.at[i,'DSK_product'] = highest_ratio[2]
+        #Set the highest ratio in the merged_df, if the id is not == NaN
+        if not pd.isna(highest_ratio[1]):
+            merged_df.at[i,'DSK_id'] = highest_ratio[1]        
+            merged_df.at[i,'DSK_product'] = highest_ratio[2]
+        else:
+            merged_df.drop(i, inplace=True)
 
     return merged_df
 

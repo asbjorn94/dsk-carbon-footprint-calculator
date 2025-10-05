@@ -3,6 +3,13 @@ import pandas as pd
 import re
 import os
 
+import sys
+from pathlib import Path
+project_root = Path(__file__).resolve().parent.parent
+sys.path.append(str(project_root))
+
+from source.databases import insert_records_into_table
+
 #DATA EXTRACTION ========================================================================================================================
 
 def pprint(matrix):
@@ -220,10 +227,15 @@ def select_data(df : pd.DataFrame) -> pd.DataFrame:
     return result
 
 #DATA EXPORT ========================================================================================================================
-def export_data(data : pd.DataFrame, out_dir) -> None:
+def export_data(data : pd.DataFrame, out_dir, to_database=False) -> None:
     with open(out_dir + "conversion_table.txt", "w") as f:
         f.write(data.to_markdown()) 
-          
+
+    if to_database == True:
+        #Set data types
+        data['Konverteringsfaktor'] = pd.to_numeric(data['Konverteringsfaktor'], errors='coerce')
+        insert_records_into_table(dataframe=data)
+
 
 #MAIN ========================================================================================================================
 if __name__=="__main__":
@@ -233,7 +245,7 @@ if __name__=="__main__":
     data : pd.DataFrame = create_conversion_factor_table(filename)
     data = clean_data(data)
     data = select_data(data)
-    export_data(data, dir + "/output/")
+    export_data(data, dir + "/output/", True)
     print("") 
     print("Main-function finished") 
     print("") 

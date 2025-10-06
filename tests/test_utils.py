@@ -1,14 +1,5 @@
 import pytest
-# import backend.utils as utils 
 from source import utils
-
-print("hello")
-
-def test_something():
-    print(utils.get_best_database_match("salt"))
-
-    result = utils.get_best_database_match("salt")
-    #assert result == []
 
 # @pytest.mark.parametrize("input, output", 
 #                             [("<li>1 tsk sukker</li>",[('1 tsk', 'sukker')]),
@@ -28,7 +19,4 @@ def test_something():
 
 #     # result = StringHandler.parse_recipe_item("<li>0,5 dl fløde Eller 1 dl sødmælk (valgfrit)</li>")
 #     # self.assertEqual(result, [('0,5 dl', 'fløde'),('1 dl', 'sødmælk (valgfrit)')])  
-
-# # if __name__ == '__main__':
-# #     unittest.main()
 

@@ -39,8 +39,6 @@ def setup():
 setup()
 
 def old_setup(): #TODO: Needs to be delegated to databases.py
-
-
     db = mysql.connector.connect(
         host = os.getenv('dsk_mysql_host'),
         user = os.getenv('dsk_mysql_user'),

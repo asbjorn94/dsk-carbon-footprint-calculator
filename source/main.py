@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from .config import app, db
+from .config import app
 import json
 from .utils import Utils
 
@@ -17,19 +17,3 @@ def get_footprint():
         """)
 
     return json.dumps(response)
-
-    # if request.json.get("product") == "Opskrift":
-    #     return panda_db.to_json(orient = "records")
-    # else:
-    #     return (
-    #         jsonify({"Error": "Bad request"}),400
-    #     )
-
-# with app.app_context():
-#     db.create_all()
-
-# if __name__ == "__main__":
-#     with app.app_context():
-#         db.create_all()
-
-#     app.run(debug=True)

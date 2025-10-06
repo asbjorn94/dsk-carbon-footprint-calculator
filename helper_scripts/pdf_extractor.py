@@ -9,6 +9,7 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
 from source.databases import insert_records_into_table, dsk_table
+from source.dsk_item import DSKItem
 from thefuzz import fuzz
 
 #DATA EXTRACTION ========================================================================================================================
@@ -234,6 +235,40 @@ def enable_word_comparability(s : str):
     word_list = s.split(" ")
     return word_list
 
+def map_to_dsk_item(conv_item_str: str) -> DSKItem:
+    ratio_threshold = 80 #A minimum threshold for how good the string match should be
+
+    best_match = {
+        'ratio': 0,
+        'dsk_item': None
+    }
+    
+    conv_item_words : str = enable_word_comparability(conv_item_str)
+    
+    for j, dsk_item in dsk_table.iterrows():
+        dsk_item_words : str = enable_word_comparability(dsk_item['product'])
+
+        #Minimum requirement: One word overlap
+        if any(i in conv_item_words for i in dsk_item_words):
+            #If two lists have overlapping word, evaluate ratio
+            ratio = fuzz.token_set_ratio(conv_item_str, dsk_item['product'])
+
+            #If higher than the current highest, update the highest ratio
+            if ratio > best_match['ratio']:
+                best_match['ratio'] = ratio
+                best_match['dsk_item'] = DSKItem(
+                    id=dsk_item['id'],
+                    product=dsk_item['product'],
+                    footprint=dsk_item['kg_co2e_pr_kg']
+                )
+        else: #Otherwise ignore
+            continue
+    if best_match['ratio'] > ratio_threshold:
+        return best_match['dsk_item']
+    else:
+        return None
+
+
 def map_to_dsk_items(df : pd.DataFrame) -> pd.DataFrame:
     #To append DSK data
     merged_df = df
@@ -244,29 +279,12 @@ def map_to_dsk_items(df : pd.DataFrame) -> pd.DataFrame:
     #Iterate through dataframe to match with food item from DSK
     for i, conv_item in merged_df.iterrows():
         
-        #Ratio, id, dsk_name
-        highest_ratio = (0, pd.NA, pd.NA)
-        conv_item_words : str = enable_word_comparability(conv_item['Madvare'])
-        
-        for j, dsk_item in dsk_table.iterrows():
-            
-            dsk_item_words : str = enable_word_comparability(dsk_item['product'])
-
-            #Minimum requirement: One word overlap
-            if any(i in conv_item_words for i in dsk_item_words):
-                #If two lists have overlapping word, evaluate ratio
-                ratio = fuzz.token_set_ratio(conv_item['Madvare'], dsk_item['product'])
-
-                #If higher than the current highest, update the highest ratio
-                if ratio > highest_ratio[0]:
-                    highest_ratio = (ratio, dsk_item['id'], dsk_item['product'])
-            else: #Otherwise ignore
-                continue
+        dsk_item = map_to_dsk_item(conv_item['Madvare'])
 
         #Set the highest ratio in the merged_df, if the id is not == NaN
-        if not pd.isna(highest_ratio[1]):
-            merged_df.at[i,'DSK_id'] = highest_ratio[1]        
-            merged_df.at[i,'DSK_product'] = highest_ratio[2]
+        if not dsk_item is None:
+            merged_df.at[i,'DSK_id'] = dsk_item.id      
+            merged_df.at[i,'DSK_product'] = dsk_item.product
         else:
             merged_df.drop(i, inplace=True)
 
@@ -291,7 +309,8 @@ if __name__=="__main__":
     data : pd.DataFrame = create_conversion_factor_table(filename)
     data = clean_data(data)
     data = select_data(data)
-    export_data(data, dir + "/output/", True)
+    data = map_to_dsk_items(data)
+    export_data(data, dir + "/output/", False)
     print("") 
     print("Main-function finished") 
     print("") 

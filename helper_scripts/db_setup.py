@@ -29,9 +29,12 @@ def setup_dsk_table_orig():
         if isinstance(x, (int, float)) and str(x) == '-0.0':
             return 0.0
         return x
+    xlsfile = xlsfile.map(replace_negative_zero)
+    #Exclude ready-made meals
+    xlsfile = xlsfile[~xlsfile['Kategori'].isin(["Færdigretter"])]
+    
+    databases.insert_records_into_dsk_table_orig(xlsfile)
 
-    xlsfile = xlsfile.applymap(replace_negative_zero)
-    databases.insert_records_into_dsk_table_orig(xlsfile)    
 
 def setup():
     setup_dsk_table_orig()

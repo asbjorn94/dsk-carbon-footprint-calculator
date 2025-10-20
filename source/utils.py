@@ -1,11 +1,11 @@
 from .databases import dsk_table, synonym_table, conversion_table
-
+from .dsk_item import DSKItem
 from .errors import UnitNotRecognizedError, IngredientNotFoundError,QuantityNotStatedError
 import re
 from typing import List
 from thefuzz import fuzz
 
-ratio_threshold = 80
+ratio_threshold = 70
 
 class Utils:
     
@@ -63,16 +63,19 @@ class Utils:
         return response      
 
 
-def parse_recipe_item(text: str) -> tuple[int,str,str,str]:
+def parse_recipe_item(text: str):
     amount_pattern = "([\d]+[.,]?[\d]*\s\w+)"
     ingredient_pattern = "(.*)"
     pattern = r"^" + amount_pattern + "?\s?" + ingredient_pattern + "$"
     match = re.match(pattern, text)
 
     ingredient = match.group(2)
-    (ingredient_id, ingredient_name, ingredient_footprint) = get_best_database_match(ingredient)
+    best_match = get_best_database_match(ingredient)
+    
+    # (ingredient_id, ingredient_name, ingredient_footprint) = get_best_database_match(ingredient)
     amount = match.group(1)
-    return (amount, ingredient_id, ingredient, ingredient_name, ingredient_footprint)
+    return (amount, best_match.id, ingredient, best_match.product, best_match.footprint)
+    # return (amount, ingredient_id, ingredient, ingredient_name, ingredient_footprint)
 
 
 def split_ingredient_string(ingredient : str):
@@ -80,7 +83,7 @@ def split_ingredient_string(ingredient : str):
     return ingredient.split(" ")
       
 
-def get_best_database_match(ingredient: str):
+def get_best_database_match(ingredient: str) -> DSKItem:
     ratios = []  
 
     for i, row in synonym_table.iterrows():
@@ -108,7 +111,10 @@ def get_best_database_match(ingredient: str):
     return_tuple = dsk_table.loc[dsk_table['id'] == best_ratio_id].values[0]
     print(f"Ratio: {best_ratio}, tuple: {tuple(return_tuple)}")
     (return_id,return_product,return_footprint) = tuple(return_tuple)
-    return (return_id,return_product, return_footprint)
+    
+    dsk_item = DSKItem(id=return_id, product=return_product, footprint=return_footprint)
+    return dsk_item
+    #return (return_id,return_product, return_footprint)
     
 
 #Should contain logic that determines if ingredient is found or not

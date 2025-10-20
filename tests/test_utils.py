@@ -1,22 +1,26 @@
 import pytest
 from source import utils
 
-# @pytest.mark.parametrize("input, output", 
-#                             [("<li>1 tsk sukker</li>",[('1 tsk', 'sukker')]),
-#                             (" <li>0,5 tsk chiliflager (valgfrit)</li>",[('0,5 tsk', 'chiliflager (valgfrit)')])])
-# def test__parse_recipe_item(input, output):
-#     assert StringHandler.parse_recipe_item(input) == output
-#     # result = StringHandler.parse_recipe_item("<li>1 tsk sukker</li>")
-#     # self.assertEqual(result, [('1 tsk', 'sukker')])
-    
-#     # result = StringHandler.parse_recipe_item(" <li>0,5 tsk chiliflager (valgfrit)</li>")
-#     # self.assertEqual(result, [('0,5 tsk', 'chiliflager (valgfrit)')])
+@pytest.mark.parametrize("input, output", 
+                            [
+                                ("400 g spaghetti",('400 g', 234, 'spaghetti', 'Pasta', 1.73))
+                             ])
+def test_parse_recipe_item(input, output):
+    assert utils.parse_recipe_item(input) == output
 
-# #Tests if string-splits on "eller" is conducted correctly
-# def test__parse_recipe_item_splitting():
-#     result = StringHandler.parse_recipe_item("<li>0,5 dl fløde eller 1 dl sødmælk (valgfrit)</li>")
-#     assert result == [('0,5 dl', 'fløde'),('1 dl', 'sødmælk (valgfrit)')]    
-
-#     # result = StringHandler.parse_recipe_item("<li>0,5 dl fløde Eller 1 dl sødmælk (valgfrit)</li>")
-#     # self.assertEqual(result, [('0,5 dl', 'fløde'),('1 dl', 'sødmælk (valgfrit)')])  
-
+#Reflection: Maybe the most future-proof approach is to test on the correct returning of the id, as naming and footprints might change in newer versions of "Den store klimadatabase"?
+@pytest.mark.parametrize("input, id, product, footprint", 
+                            [
+                                ("spaghetti", 234,"Pasta", 1.73),
+                                ("hvidløg, finthakkede", 136, "Hvidløg", 1.13),
+                                ("håndfulde frisk basilikum, grofthakket", 486, "Basilikum, frisk", 0.33),
+                                ("tomater, grofthakkede", 2, "Tomat", 0.46),
+                                ("parmesan, eller anden hård ost", 79, "Parmesan ost, 32+", 6.63),
+                                ("salt", 151, "Salt, bordsalt (jodberiget)", 0.44),
+                                ("sort peber, friskkværnet", 302, "Peber, sort", 4.69),
+                             ])
+def test_get_best_database_match(input, id, product, footprint):
+    result = utils.get_best_database_match(input)
+    assert result.id == id
+    assert result.product == product
+    assert result.footprint == pytest.approx(footprint)

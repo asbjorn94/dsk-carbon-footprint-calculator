@@ -5,7 +5,7 @@ import pandas as pd
 from dotenv import load_dotenv
 import sqlalchemy as sa
 
-load_dotenv()
+load_dotenv(os.path.dirname(__file__) + '/.env')
 
 host = os.getenv('dsk_mysql_host')
 user = os.getenv('dsk_mysql_user')

@@ -91,9 +91,16 @@ def get_best_database_match(ingredient: str) -> DSKItem:
 
         ratio = fuzz.token_set_ratio(ingredient, synonym)
 
-        split_synonym = split_ingredient_string(synonym)     
-        if split_synonym[0] == ingredient:
-            ratio += 100 # If the ingredient is a perfect match on the first word of the synonym, reward it with 100 points
+        split_synonym = split_ingredient_string(synonym)
+        if len(split_synonym) > 1: #If more than one word
+            if split_synonym[0] == ingredient:
+                ratio += 100 # If the ingredient is a perfect match on the first word of the synonym, reward it with 100 points
+        elif len(split_synonym) == 1 and split_synonym[0] == ingredient:
+            #Ingredient string only contains one word and it exactly matches a string in the database when both lowercased
+            return_tuple = dsk_table.loc[dsk_table['id'] == id].values[0]
+            (return_id,return_product,return_footprint) = tuple(return_tuple)
+            dsk_item = DSKItem(id=return_id, product=return_product, footprint=return_footprint)
+            return dsk_item
 
         ratios.append((id,ratio))
 

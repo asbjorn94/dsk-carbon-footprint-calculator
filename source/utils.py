@@ -5,8 +5,6 @@ import re
 from typing import List
 from thefuzz import fuzz
 
-ratio_threshold = 70
-
 class Utils:
     
     @staticmethod
@@ -85,6 +83,7 @@ def split_ingredient_string(ingredient : str):
 
 def get_best_database_match(ingredient: str) -> DSKItem:
     ratios = []  
+    ratio_threshold = 60
 
     for i, row in synonym_table.iterrows():
         id = row['product_id']
@@ -104,7 +103,7 @@ def get_best_database_match(ingredient: str) -> DSKItem:
 
     (best_ratio_id,best_ratio) = ratios[-1]
 
-    if ingredient_is_not_found(best_ratio):
+    if best_ratio < ratio_threshold:
         error_msg = f"The ingredient could not be found. Ratio from fuzzy string matching was below the ratio threshold ({ratio_threshold}"
         raise IngredientNotFoundError(error_msg, ingredient)
 
@@ -115,11 +114,6 @@ def get_best_database_match(ingredient: str) -> DSKItem:
     dsk_item = DSKItem(id=return_id, product=return_product, footprint=return_footprint)
     return dsk_item
     #return (return_id,return_product, return_footprint)
-    
-
-#Should contain logic that determines if ingredient is found or not
-def ingredient_is_not_found(best_ratio : int) -> bool:
-    return best_ratio < ratio_threshold
 
 
 def compute_kilograms_from_unit(ingredient_id : int, quantity : float, unit : str) -> float:

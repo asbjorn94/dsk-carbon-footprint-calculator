@@ -35,9 +35,8 @@ def get_dsk_item_by_id(id: int) -> DSKItem:
         result = DSKItem(
             id = result.id,
             product = result.product,
-            footprint = result.kg_co2e_pr_kg
+            footprint = float(result.kg_co2e_pr_kg)
         )
-        
         return result
 
 def insert_records_into_table(dataframe, table_name="conversion_table2"):

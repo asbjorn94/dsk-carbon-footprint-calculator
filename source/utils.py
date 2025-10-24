@@ -1,4 +1,4 @@
-from .databases import dsk_table, synonym_table, conversion_table
+from .databases import dsk_table, synonym_table, conversion_table, get_dsk_item_by_id
 from .dsk_item import DSKItem
 from .errors import UnitNotRecognizedError, IngredientNotFoundError,QuantityNotStatedError
 import re
@@ -97,10 +97,7 @@ def get_best_database_match(ingredient: str) -> DSKItem:
                 ratio += 100 # If the ingredient is a perfect match on the first word of the synonym, reward it with 100 points
         elif len(split_synonym) == 1 and split_synonym[0] == ingredient:
             #Ingredient string only contains one word and it exactly matches a string in the database when both lowercased
-            return_tuple = dsk_table.loc[dsk_table['id'] == id].values[0]
-            (return_id,return_product,return_footprint) = tuple(return_tuple)
-            dsk_item = DSKItem(id=return_id, product=return_product, footprint=return_footprint)
-            return dsk_item
+            return get_dsk_item_by_id(id)   
 
         ratios.append((id,ratio))
 
@@ -114,13 +111,7 @@ def get_best_database_match(ingredient: str) -> DSKItem:
         error_msg = f"The ingredient could not be found. Ratio from fuzzy string matching was below the ratio threshold ({ratio_threshold}"
         raise IngredientNotFoundError(error_msg, ingredient)
 
-    return_tuple = dsk_table.loc[dsk_table['id'] == best_ratio_id].values[0]
-    print(f"Ratio: {best_ratio}, tuple: {tuple(return_tuple)}")
-    (return_id,return_product,return_footprint) = tuple(return_tuple)
-    
-    dsk_item = DSKItem(id=return_id, product=return_product, footprint=return_footprint)
-    return dsk_item
-    #return (return_id,return_product, return_footprint)
+    return get_dsk_item_by_id(best_ratio_id)    
 
 
 def compute_kilograms_from_unit(ingredient_id : int, quantity : float, unit : str) -> float:

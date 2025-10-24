@@ -2,10 +2,11 @@ import pytest
 from source import databases
 
 
-@pytest.mark.parametrize("input, output", 
+@pytest.mark.parametrize("id, product, footprint", 
                             [
-                                (2,"Tomat")
+                                (2,"Tomat", 0.46)
                              ])
-def test_parse_recipe_item(input, output):
-    assert databases.get_dsk_item_by_id(input).product == output
+def test_get_dsk_item_by_id(id, product, footprint):
+    assert databases.get_dsk_item_by_id(id).product == product
+    assert databases.get_dsk_item_by_id(id).footprint == pytest.approx(footprint)
 

@@ -24,6 +24,7 @@ def create_datastructure():
 
         res_dict = {
             "id" : row['id'],
+            "product" : row['product'],
             "kg_co2e_pr_kg" : row['kg_co2e_pr_kg'],
             "description" : description
         }

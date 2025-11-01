@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(project_root))
-from source.dsk_item import DSKItem, DSKBaseword
+from source.dsk_item import DSKItem
 
 base_dir = os.path.dirname(__file__)
 
@@ -34,19 +34,25 @@ def get_best_description(residue_words, descriptions) -> DSKItem:
         if description['description'] is not None:
             desc_ratio = rank_description(residue_words, description['description'])
             if desc_ratio > best_matching_description['rank']:
+                
+                print(f" --> Description match!")
+                print(f" ----> description: {description['description']}")
+                print(f" ----> product: {description['product']}")
+
                 best_matching_description['rank'] = desc_ratio
                 best_matching_description['dsk_item'] = DSKItem(
                     id=description['id'],
+                    product=description['product'],
                     footprint=description['kg_co2e_pr_kg']
                 )
 
     return best_matching_description['dsk_item']
 
 
-def get_best_match(ingredient : str) -> list[DSKBaseword]:
+def get_best_match(ingredient : str):
     with open(base_dir + "/base_datastructure.json") as json_file:
         basewords : dict = json.load(json_file) # The "database"
-        basewords = dict(islice(basewords.items(),4)) #For testing
+        # basewords = dict(islice(basewords.items(),4)) #For testing
         # print(basewords)
         
         ing_words = ingredient.replace(",","").lower().split(" ") #Tokenize
@@ -55,17 +61,17 @@ def get_best_match(ingredient : str) -> list[DSKBaseword]:
             print(f"ing_word: {ing_word}")
             for baseword, descriptions in basewords.items():
                 baseword = baseword.lower()
-                print(f"baseword: {baseword}")
+                # print(f"baseword: {baseword}")
                 #1. Is the word very similar to the baseword?
                 if fuzz.partial_ratio(baseword, ing_word) > ratio_threshold:
+                    print(f"\nBaseword match!")
+                    print(f" - baseword: {baseword}")
                     residue_words = [word for word in ing_words if word != ing_word]
                     dsk_item = get_best_description(residue_words, descriptions)
-                    
-                    # print(f"desc_words: {residue_words}")
-                    print(f"dsk_items: {dsk_item}")
+
 
 def main():
-    get_best_match("Agurk, syltet")    
+    get_best_match("hakket tomat")    
 
 if __name__ == "__main__":
     main()

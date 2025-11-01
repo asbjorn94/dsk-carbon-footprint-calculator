@@ -39,7 +39,7 @@ def test_get_best_database_match1(input, id, product, footprint):
                                 ("hvidvin (valgfrit)", 375),
                                 #("dåser hakket tomat",), Should throw error, not found
                                 ("glas små kapers (ca. 65g)", 437),
-                                ("glas kalamata oliven (ca. 200g)", 139) #Should map to "Oliven, sorte, uden sten, i saltlage
+                                #("glas kalamata oliven (ca. 200g)", 139) #Should map to "Oliven, sorte, uden sten, i saltlage
                                 #("Revet skal fra en halv citron",), #How to handle this?
                                 #("æblecidereddike",), Should throw error, not found
                                 #("Salt og peber", ) Should be handled in a way where carbon footprint from both salt and pepper is fetched

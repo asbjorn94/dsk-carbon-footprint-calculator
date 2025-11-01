@@ -8,7 +8,7 @@ from thefuzz import fuzz
 class Utils:
     
     @staticmethod
-    def parse_recipe_items(recipe_list: List[dict]) -> list[DSKItem]:
+    def parse_recipe_items(recipe_list: List[dict]) -> dict[str,list]:
         response = {
             "recipeitemFootprintCalculated" : [],
             "unitsNotRecognized" : [],
@@ -18,13 +18,11 @@ class Utils:
         
         for i, item in enumerate(recipe_list):
             try:
-                # (amount, ingredient_id, ingredient, food_product, food_product_footprint) = parse_recipe_item(item.get("liElement"))
                 ingredient_item = parse_recipe_item(item.get("liElement"))
-                
                 best_match = get_best_database_match(ingredient_item.name)
                 amount_in_kg = compute_kilograms_from_unit(best_match.id, ingredient_item.quantity, ingredient_item.unit)
-                recipeitem_footprint = calculate_footprint_with_amount(amount_in_kg, best_match.footprint)
-                recipeitem_footprint = round_total_footprint(recipeitem_footprint)
+                recipeitem_footprint = amount_in_kg * best_match.footprint
+                recipeitem_footprint = round(recipeitem_footprint,3)
             
             except IngredientNotFoundError as e:     
                 print(e.error_msg)
@@ -56,7 +54,7 @@ class Utils:
                 #         the lookup in the database was found to be {best_match[1]}, \n 
                 #         and the total footprint was found to be: {total_footprint_for_ingredient}
                 #       """)
-        return response      
+        return response     
 
 
 def parse_recipe_item(text: str) -> IngredientItem:
@@ -142,11 +140,3 @@ def split_into_quantity_and_unit(amount : str) -> tuple[float,str]:
     quantity = float(match.group(1))
     unit = match.group(2)
     return (quantity,unit)
-
-
-def calculate_footprint_with_amount(amount : float, footprint : float):
-    return amount * footprint #Only handles amount = kg as of now
-
-
-def round_total_footprint(number: float) -> float:
-    return round(number,3)

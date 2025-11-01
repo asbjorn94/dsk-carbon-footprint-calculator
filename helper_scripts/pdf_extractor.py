@@ -9,7 +9,7 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.append(str(project_root))
 
 from source.databases import insert_records_into_table, dsk_table
-from source.dsk_item import DSKItem
+from source.objects import DSKItem
 from thefuzz import fuzz
 
 #DATA EXTRACTION ========================================================================================================================

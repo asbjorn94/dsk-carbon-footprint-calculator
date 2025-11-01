@@ -1,5 +1,5 @@
 from .databases import dsk_table, synonym_table, conversion_table, get_dsk_item_by_id
-from .dsk_item import DSKItem
+from .objects import DSKItem, IngredientItem
 from .errors import UnitNotRecognizedError, IngredientNotFoundError,QuantityNotStatedError
 import re
 from typing import List
@@ -8,7 +8,7 @@ from thefuzz import fuzz
 class Utils:
     
     @staticmethod
-    def parse_recipe_items(recipe_list: List[dict]) -> list:
+    def parse_recipe_items(recipe_list: List[dict]) -> list[DSKItem]:
         response = {
             "recipeitemFootprintCalculated" : [],
             "unitsNotRecognized" : [],
@@ -17,15 +17,13 @@ class Utils:
         }
         
         for i, item in enumerate(recipe_list):
-            
             try:
-                (amount, ingredient_id, ingredient, food_product, food_product_footprint) = parse_recipe_item(item.get("liElement"))
-                if amount == None:
-                    raise QuantityNotStatedError("The quantity for the ingredient has not been stated. Alternatively, the software might not have been able to recognize the quanity stated, if any.")
+                # (amount, ingredient_id, ingredient, food_product, food_product_footprint) = parse_recipe_item(item.get("liElement"))
+                ingredient_item = parse_recipe_item(item.get("liElement"))
                 
-                (quantity, unit) = split_into_quantity_and_unit(amount)
-                amount_in_kg = compute_kilograms_from_unit(ingredient_id, quantity, unit)
-                recipeitem_footprint = calculate_footprint_with_amount(amount_in_kg, food_product_footprint)
+                best_match = get_best_database_match(ingredient_item.name)
+                amount_in_kg = compute_kilograms_from_unit(best_match.id, ingredient_item.quantity, ingredient_item.unit)
+                recipeitem_footprint = calculate_footprint_with_amount(amount_in_kg, best_match.footprint)
                 recipeitem_footprint = round_total_footprint(recipeitem_footprint)
             
             except IngredientNotFoundError as e:     
@@ -37,20 +35,20 @@ class Utils:
             except UnitNotRecognizedError as e:
                 print(e)  
                 response['unitsNotRecognized'].append({
-                    "foodProduct": food_product, #TODO: Seems redundant
-                    "errorMessage": f'Måleenheden, "{unit}", kunne ikke genkendes.',
-                    "foodProductFootprint": food_product_footprint
+                    "foodProduct": best_match.product, #TODO: Seems redundant
+                    "errorMessage": f'Måleenheden, "{ingredient_item.unit}", kunne ikke genkendes.',
+                    "foodProductFootprint": best_match.footprint
                 })
             except QuantityNotStatedError as e:
                 print(e)
                 response['quantityNotStated'].append({
-                    "foodProduct": food_product, #TODO: Seems redundant - maybe merge into function that is called both when QuantityNotStatedError and UnitNotRecognizedError is raised
+                    "foodProduct": best_match.product, #TODO: Seems redundant - maybe merge into function that is called both when QuantityNotStatedError and UnitNotRecognizedError is raised
                     "errorMessage": f'Ingen mængdeangivelse kunne detekteres for den givne ingrediens',
-                    "foodProductFootprint": food_product_footprint
+                    "foodProductFootprint": best_match.footprint
                 })
             else:
                 response['recipeitemFootprintCalculated'].append({
-                    "foodProduct": food_product, 
+                    "foodProduct": best_match.product, 
                     "recipeitemFootprint": recipeitem_footprint   
                 })
                 # print(f"""
@@ -61,19 +59,26 @@ class Utils:
         return response      
 
 
-def parse_recipe_item(text: str):
+def parse_recipe_item(text: str) -> IngredientItem:
     amount_pattern = "([\d]+[.,]?[\d]*\s\w+)"
     ingredient_pattern = "(.*)"
     pattern = r"^" + amount_pattern + "?\s?" + ingredient_pattern + "$"
     match = re.match(pattern, text)
-
-    ingredient = match.group(2)
-    best_match = get_best_database_match(ingredient)
-    
-    # (ingredient_id, ingredient_name, ingredient_footprint) = get_best_database_match(ingredient)
+    ingredient_name = match.group(2)
     amount = match.group(1)
-    return (amount, best_match.id, ingredient, best_match.product, best_match.footprint)
-    # return (amount, ingredient_id, ingredient, ingredient_name, ingredient_footprint)
+
+    if amount == None:
+        raise QuantityNotStatedError("The quantity for the ingredient has not been stated. Alternatively, the software might not have been able to recognize the quanity stated, if any.")
+
+    (quantity, unit) = split_into_quantity_and_unit(amount)
+
+    ingredient_item = IngredientItem(
+        name=ingredient_name,
+        unit=unit,
+        quantity=quantity
+    )
+
+    return ingredient_item
 
 
 def split_ingredient_string(ingredient : str):

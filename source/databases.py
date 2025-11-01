@@ -2,7 +2,7 @@ import os
 import pandas as pd
 #from pandas import read_csv
 from dotenv import load_dotenv
-from .dsk_item import DSKItem
+from .objects import DSKItem
 import sqlalchemy as sa
 from sqlalchemy.orm import sessionmaker
 

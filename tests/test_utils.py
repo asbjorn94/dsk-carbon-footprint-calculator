@@ -4,12 +4,15 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
-@pytest.mark.parametrize("input, output", 
+@pytest.mark.parametrize("input, name, unit, quantity", 
                             [
-                                ("400 g spaghetti",('400 g', 234, 'spaghetti', 'Pasta', 1.73))
+                                ("400 g spaghetti", 'spaghetti','g', 400)
                              ])
-def test_parse_recipe_item(input, output):
-    assert utils.parse_recipe_item(input) == output
+def test_parse_recipe_item(input, name, unit, quantity):
+    result = utils.parse_recipe_item(input)
+    assert result.name == name
+    assert result.unit == unit
+    assert result.quantity == quantity
 
 #Reflection: Maybe the most future-proof approach is to test on the correct returning of the id, as naming and footprints might change in newer versions of "Den store klimadatabase"?
 #Recipe: https://www.valdemarsro.dk/pasta-med-friske-tomater/

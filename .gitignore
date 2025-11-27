@@ -7,8 +7,9 @@ jupyter_test_env
 *.sh
 *.xlsx
 *.env
-*.txt
 *.json
+
+conversion_table.txt
 
 local_config.py
 .venv

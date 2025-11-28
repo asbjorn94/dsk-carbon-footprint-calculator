@@ -4,57 +4,87 @@ from .errors import UnitNotRecognizedError, IngredientNotFoundError,QuantityNotS
 import re
 from typing import List
 from thefuzz import fuzz
+from .ingredient_parser import fetch_from_api
 
 class Utils:
     
     @staticmethod
-    def parse_recipe_items(recipe_list: List[dict]) -> dict[str,list]:
+    def parse_recipe_items(recipe_list: List[dict],method='fuzzy') -> dict[str,list]:
         response = {
             "recipeitemFootprintCalculated" : [],
             "unitsNotRecognized" : [],
             "quantityNotStated" : [],
             "foodProductsNotFound" : []
         }
+
+        if method == 'fuzzy':
+            return parse_recipe_items_fuzzy(response, recipe_list)
+        elif method == 'semantic':
+            return parse_recipe_items_semantic(response, recipe_list)
+
+
+def generate_response_item(response, 
+                           type, 
+                           ingredient=None, 
+                           food_product=None, 
+                           error_mesage=None, 
+                           food_product_footprint=None, 
+                           recipe_item_footprint=None):
+    response[type].append({
+        "ingredient": ingredient,
+        "foodProduct": food_product,
+        "errorMessage": error_mesage,
+        "foodProductFootprint": food_product_footprint,
+        "recipeitemFootprint": recipe_item_footprint
+    })
         
-        for i, item in enumerate(recipe_list):
-            try:
-                ingredient_item = parse_recipe_item(item.get("liElement"))
-                best_match = get_best_database_match(ingredient_item.name)
-                amount_in_kg = compute_kilograms_from_unit(best_match.id, ingredient_item.quantity, ingredient_item.unit)
-                recipeitem_footprint = amount_in_kg * best_match.footprint
-                recipeitem_footprint = round(recipeitem_footprint,3)
-            
-            except IngredientNotFoundError as e:     
-                print(e.error_msg)
-                response['foodProductsNotFound'].append({
-                    "ingredient": e.ingredient, 
-                    "errorMessage": f'Ingrediensen, "{e.ingredient}", kunne ikke findes i databasen.'    
-                })
-            except UnitNotRecognizedError as e:
-                print(e)  
-                response['unitsNotRecognized'].append({
-                    "foodProduct": best_match.product, #TODO: Seems redundant
-                    "errorMessage": f'Måleenheden, "{ingredient_item.unit}", kunne ikke genkendes.',
-                    "foodProductFootprint": best_match.footprint
-                })
-            except QuantityNotStatedError as e:
-                print(e)
-                response['quantityNotStated'].append({
-                    "foodProduct": best_match.product, #TODO: Seems redundant - maybe merge into function that is called both when QuantityNotStatedError and UnitNotRecognizedError is raised
-                    "errorMessage": f'Ingen mængdeangivelse kunne detekteres for den givne ingrediens',
-                    "foodProductFootprint": best_match.footprint
-                })
-            else:
-                response['recipeitemFootprintCalculated'].append({
-                    "foodProduct": best_match.product, 
-                    "recipeitemFootprint": recipeitem_footprint   
-                })
-                # print(f"""
-                #         For ingredient (incl amount): {result}, \n
-                #         the lookup in the database was found to be {best_match[1]}, \n 
-                #         and the total footprint was found to be: {total_footprint_for_ingredient}
-                #       """)
-        return response     
+
+def parse_recipe_items_fuzzy(response, recipe_list: List[dict]) -> dict[str,list]:        
+
+    for i, item in enumerate(recipe_list):
+        try:
+            ingredient_item = parse_recipe_item(item.get("liElement"))
+            best_match = get_best_database_match(ingredient_item.name)
+            if ingredient_item.quantity is None and ingredient_item.unit is None:
+                raise QuantityNotStatedError("The quantity for the ingredient has not been stated. Alternatively, the software might not have been able to recognize the quanity stated, if any.")
+            amount_in_kg = compute_kilograms_from_unit(best_match.id, ingredient_item.quantity, ingredient_item.unit)
+            recipeitem_footprint = amount_in_kg * best_match.footprint
+            recipeitem_footprint = round(recipeitem_footprint,3)
+        
+        except IngredientNotFoundError as e:     
+            print(e.error_msg)
+            generate_response_item(
+                response=response, 
+                type='foodProductsNotFound',
+                ingredient=e.ingredient,
+                error_mesage=f'Ingrediensen, "{e.ingredient}", kunne ikke findes i databasen.'
+            )
+        except UnitNotRecognizedError as e:
+            print(e)  
+            generate_response_item(
+                response=response, 
+                type='unitsNotRecognized',
+                food_product=best_match.product,
+                error_mesage=f'Måleenheden, "{ingredient_item.unit}", kunne ikke genkendes.',
+                food_product_footprint=best_match.footprint
+            )
+        except QuantityNotStatedError as e:
+            print(e)
+            generate_response_item(
+                response=response, 
+                type='quantityNotStated',
+                food_product=best_match.product,
+                error_mesage=f'Ingen mængdeangivelse kunne detekteres for den givne ingrediens',
+                food_product_footprint=best_match.footprint
+            )
+        else:
+            generate_response_item(
+                response=response, 
+                type='recipeitemFootprintCalculated',
+                food_product=best_match.product,
+                recipe_item_footprint=recipeitem_footprint
+            )
+    return response     
 
 
 def parse_recipe_item(text: str) -> IngredientItem:
@@ -65,17 +95,16 @@ def parse_recipe_item(text: str) -> IngredientItem:
     ingredient_name = match.group(2)
     amount = match.group(1)
 
-    if amount == None:
-        raise QuantityNotStatedError("The quantity for the ingredient has not been stated. Alternatively, the software might not have been able to recognize the quanity stated, if any.")
-
-    (quantity, unit) = split_into_quantity_and_unit(amount)
+    if amount is not None:
+        (quantity, unit) = split_into_quantity_and_unit(amount)
+    else:
+        quantity = unit = None
 
     ingredient_item = IngredientItem(
         name=ingredient_name,
         unit=unit,
         quantity=quantity
     )
-
     return ingredient_item
 
 

@@ -1,10 +1,11 @@
-from .databases import dsk_table, synonym_table, conversion_table, get_dsk_item_by_id
+from .databases import synonym_table, conversion_table, get_dsk_item_by_id
 from .objects import DSKItem, IngredientItem
 from .errors import UnitNotRecognizedError, IngredientNotFoundError,QuantityNotStatedError
 import re
 from typing import List
 from thefuzz import fuzz
 from .ingredient_parser import fetch_from_api
+from .product_mapper import get_best_match
 
 class Utils:
     
@@ -23,7 +24,7 @@ class Utils:
             return parse_recipe_items_semantic(response, recipe_list)
 
 
-def generate_response_item(response, 
+def generate_response_item(response, #TODO The generation of JSON response needs to be simplified...
                            type, 
                            ingredient=None, 
                            food_product=None, 
@@ -37,6 +38,47 @@ def generate_response_item(response,
         "foodProductFootprint": food_product_footprint,
         "recipeitemFootprint": recipe_item_footprint
     })
+
+
+def parse_recipe_items_semantic(response, recipe_list: List[dict]) -> dict[str,list]:
+    recipe_list = [item.get("liElement") for i, item in enumerate(recipe_list)]
+    parsed_recipe_list = fetch_from_api(recipe_list)
+    for ingredient in parsed_recipe_list:
+        best_match : DSKItem = get_best_match(ingredient['name'])
+        if ingredient['quantity'] is None:
+            generate_response_item(
+                response=response, 
+                type='quantityNotStated',
+                food_product=best_match.product,
+                error_mesage=f'Ingen mængdeangivelse kunne detekteres for den givne ingrediens',
+                food_product_footprint=best_match.footprint
+            )
+        elif best_match is None:
+            generate_response_item(
+                response=response, 
+                type='foodProductsNotFound',
+                ingredient=ingredient['name'],
+                error_mesage=f'Ingrediensen, "{ingredient["name"]}", kunne ikke findes i databasen.'
+            )
+        else:
+            try:
+                recipe_item_footprint = best_match.footprint * compute_kilograms_from_unit(best_match.id,ingredient['quantity'],ingredient['unit'])
+                generate_response_item(
+                    response=response, 
+                    type='recipeitemFootprintCalculated',
+                    food_product=best_match.product,
+                    recipe_item_footprint=recipe_item_footprint
+                )
+            except UnitNotRecognizedError as e:
+                print(e) 
+                generate_response_item(
+                    response=response, 
+                    type='unitsNotRecognized',
+                    food_product=best_match.product,
+                    error_mesage=f'Måleenheden kunne ikke genkendes.',
+                    food_product_footprint=best_match.footprint
+                )
+    return response
         
 
 def parse_recipe_items_fuzzy(response, recipe_list: List[dict]) -> dict[str,list]:        
@@ -156,7 +198,7 @@ def compute_kilograms_from_unit(ingredient_id : int, quantity : float, unit : st
             return (quantity * get_conversion_factor(ingredient_id, unit))
         except Exception as e:
             print(e)
-            raise UnitNotRecognizedError("The unit used for the ingredient is not recognized") 
+            raise UnitNotRecognizedError(f"The unit, \"{unit}\" , used for the ingredient is not recognized") 
 
 
 def get_conversion_factor(ingredient_id : int, unit : str) -> float:

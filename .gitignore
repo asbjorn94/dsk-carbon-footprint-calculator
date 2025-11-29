@@ -1,7 +1,9 @@
 __pycache__/
 jupyter_test_env
+sentence-transformer-models
 
 *.db
+*.faiss
 *.ipynb
 *.numbers
 *.sh
@@ -12,6 +14,8 @@ jupyter_test_env
 conversion_table.txt
 
 local_config.py
+test_main.py
+
 .venv
 
 #Resources for DB creation

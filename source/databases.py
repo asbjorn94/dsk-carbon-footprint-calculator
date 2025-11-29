@@ -28,6 +28,9 @@ def fetch_table(table_name) -> pd.DataFrame:
         query = f"SELECT * FROM {table_name}"
         return pd.read_sql(query, connection)
     
+def fetch_dsk_table() -> pd.DataFrame:
+    return fetch_table("carbon_footprint")
+    
 def get_dsk_item_by_id(id: int) -> DSKItem:
     with Session() as session:
         query = sa.select(carbon_footprint_table).where(carbon_footprint_table.c.id == id)
@@ -38,6 +41,19 @@ def get_dsk_item_by_id(id: int) -> DSKItem:
             footprint = float(result.kg_co2e_pr_kg)
         )
         return result
+    
+
+def get_dsk_item_by_product(product: str) -> DSKItem:
+    with Session() as session:
+        query = sa.select(carbon_footprint_table).where(carbon_footprint_table.c.product == product)
+        result = session.execute(query).fetchone()._mapping
+        result = DSKItem(
+            id = result.id,
+            product = result.product,
+            footprint = float(result.kg_co2e_pr_kg)
+        )
+        return result
+
 
 def insert_records_into_table(dataframe, table_name="conversion_table2"):
     with engine.connect() as connection:
@@ -47,10 +63,6 @@ def insert_records_into_dsk_table_orig(dataframe, table_name="carbon_footprint_d
     with engine.connect() as connection:
         dataframe.to_sql(table_name, connection, if_exists="replace", index=False)
 
-dsk_table = fetch_table("carbon_footprint")
+# dsk_table = fetch_table("carbon_footprint")
 synonym_table = fetch_table("synonym_table")
 conversion_table = fetch_table("conversion_table")
-
-# print(dsk_table.to_markdown())
-# print(synonym_table.to_markdown())
-# print(conversion_table.to_markdown())

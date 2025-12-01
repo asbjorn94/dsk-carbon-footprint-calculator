@@ -2,14 +2,14 @@ __pycache__/
 jupyter_test_env
 sentence-transformer-models
 
-*.db
+*.csv
+*.env
 *.faiss
 *.ipynb
+*.json
 *.numbers
 *.sh
 *.xlsx
-*.env
-*.json
 
 conversion_table.txt
 

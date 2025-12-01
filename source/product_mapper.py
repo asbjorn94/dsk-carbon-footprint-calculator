@@ -10,7 +10,7 @@ from pathlib import Path
 #Some functions in this file is inspired by code from the following repository: https://github.com/mkaanaslan/carbon-footprint-wizard
 
 def initialize_model(model_name: str) -> SentenceTransformer:
-    model_path = Path("sentence-transformer-models/" + model_name)
+    model_path = Path("source/models/sentence-transformer-models/" + model_name)
     if not model_path.exists():
         model = SentenceTransformer(model_name)
         model.save(str(model_path))
@@ -34,9 +34,9 @@ def create_vector_database(model: SentenceTransformer, language: Language=Langua
     
     index_path = None
     if language is Language.EN:
-        index_path = Path('product_index_EN.faiss')
+        index_path = Path('source/product_index_EN.faiss')
     else:
-        index_path = Path('product_index_DK.faiss')
+        index_path = Path('source/product_index_DK.faiss')
         
     if index_path.exists():
         vector_db['index'] = faiss.read_index(str(index_path))
